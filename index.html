@@ -1,196 +1,473 @@
-<!DOCTYPE html>
-<html lang="pt-PT">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prime Smart | Automação em Moçambique</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        .product-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .product-card:hover { transform: translateY(-8px); shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1); }
-        .img-container img { object-fit: contain; mix-blend-mode: multiply; }
-        .category-pill { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
-    </style>
-</head>
-<body class="bg-gray-50 text-slate-900 font-sans">
+import React, { useState } from 'react';
+import { 
+  ShoppingCart, 
+  ChevronRight, 
+  Plus, 
+  Trash2, 
+  Smartphone, 
+  Cpu, 
+  CheckCircle2,
+  Lock,
+  Zap,
+  Users,
+  Target,
+  Eye,
+  Info,
+  Phone,
+  Mail,
+  MapPin,
+  ShieldCheck,
+  User
+} from 'lucide-react';
 
-    <nav class="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
-            <div class="flex items-center gap-2">
-                <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white">
-                    <i class="fa-solid fa-bolt-lightning text-xl"></i>
-                </div>
-                <h1 class="text-xl font-black text-slate-800 tracking-tighter">PRIME<span class="text-blue-600">SMART</span></h1>
+// --- DATABASE DE PRODUTOS ---
+const INITIAL_PRODUCTS = [
+  { id: 1, name: "Fechadura Biométrica Titanium WiFi", price: 23000, cat: "Segurança", desc: "Acesso via digital, senha e app. O ápice da segurança residencial.", img: "https://images.unsplash.com/photo-1558002038-1091a5759232?auto=format&fit=crop&q=80&w=400" },
+  { id: 2, name: "Smart Lock Tuya Ultra WaterProof", price: 16500, cat: "Segurança", desc: "Resistência total à chuva com tecnologia RFID e Bluetooth.", img: "https://images.unsplash.com/photo-1639815188546-c43c240ff4df?auto=format&fit=crop&q=80&w=400" },
+  { id: 4, name: "Motor de Cortina Girier WiFi Silent", price: 8000, cat: "Conforto", desc: "Automatize suas persianas com controle de voz via Alexa.", img: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&q=80&w=400" },
+  { id: 9, name: "Video Doorbell IMOU 2S Premium", price: 12500, cat: "Segurança", desc: "Visão Panorâmica 30° e detecção humana com IA.", img: "https://images.unsplash.com/photo-1621259182978-f09317796934?auto=format&fit=crop&q=80&w=400" },
+  { id: 10, name: "Câmera MOES Pan/Tilt 4MP UltraHD", price: 3400, cat: "Segurança", desc: "Patrulha panorâmica e visão noturna infravermelha.", img: "https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&q=80&w=400" },
+  { id: 12, name: "Sensor Temp Sonoff Zigbee LCD", price: 3500, cat: "Sensores", desc: "Monitorização climática precisa com ecrã de 2.5 polegadas.", img: "https://images.unsplash.com/photo-1594322436404-5a0526db4d13?auto=format&fit=crop&q=80&w=400" },
+  { id: 16, name: "Tomada MOES Zigbee PowerMonitor", price: 2200, cat: "Energia", desc: "Controle gastos e agende horários para seus aparelhos.", img: "https://images.unsplash.com/photo-1558489580-faa74691fdc5?auto=format&fit=crop&q=80&w=400" },
+  { id: 20, name: "Controle Universal Avatto IR WiFi", price: 1300, cat: "Energia", desc: "Substitua todos os seus comandos por um único app.", img: "https://images.unsplash.com/photo-1527011046414-4781f1f94f8c?auto=format&fit=crop&q=80&w=400" }
+];
+
+const App = () => {
+  const [view, setView] = useState('home'); 
+  const [cart, setCart] = useState([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [category, setCategory] = useState('Todos');
+  const [orders, setOrders] = useState([]);
+  const [notification, setNotification] = useState(null);
+
+  const categories = ['Todos', 'Segurança', 'Conforto', 'Sensores', 'Energia'];
+
+  const addToCart = (product) => {
+    setCart([...cart, { ...product, cartId: Math.random() }]);
+    setNotification(`${product.name} adicionado!`);
+    setTimeout(() => setNotification(null), 3000);
+  };
+
+  const removeFromCart = (cartId) => {
+    setCart(cart.filter(item => item.cartId !== cartId));
+  };
+
+  const total = cart.reduce((acc, item) => acc + item.price, 0);
+
+  const processOrder = (method) => {
+    if (cart.length === 0) return;
+    const newOrder = {
+      id: Math.floor(Math.random() * 90000) + 10000,
+      date: new Date().toLocaleTimeString(),
+      items: cart.length,
+      total: total,
+      method: method,
+      status: 'Confirmado'
+    };
+    setOrders([newOrder, ...orders]);
+    setCart([]);
+    setIsCartOpen(false);
+    setNotification("Pedido realizado com sucesso!");
+    setTimeout(() => setNotification(null), 5000);
+  };
+
+  const filteredProducts = category === 'Todos' 
+    ? INITIAL_PRODUCTS 
+    : INITIAL_PRODUCTS.filter(p => p.cat === category);
+
+  return (
+    <div className="min-h-screen bg-[#fafafa] text-slate-900 font-sans selection:bg-blue-100">
+      
+      {/* NOTIFICAÇÃO */}
+      {notification && (
+        <div className="fixed top-24 right-6 z-[100] bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3">
+          <CheckCircle2 className="text-blue-400 w-5 h-5" />
+          <span className="font-medium text-sm">{notification}</span>
+        </div>
+      )}
+
+      {/* BARRA DE NAVEGAÇÃO */}
+      <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl border-b border-slate-100 px-6 py-4">
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
+          <div className="flex items-center gap-3 group cursor-pointer" onClick={() => setView('home')}>
+            <div className="bg-slate-900 p-2.5 rounded-2xl group-hover:bg-blue-600 transition-colors duration-500">
+              <Cpu className="text-white w-6 h-6" />
             </div>
-            <button onclick="toggleCart()" class="relative p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition">
-                <i class="fa-solid fa-cart-shopping text-slate-700"></i>
-                <span id="cart-count" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full border-2 border-white">0</span>
+            <div>
+              <h1 className="text-xl font-black tracking-tighter leading-none">PRIME<span className="text-blue-600">SMART</span></h1>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Innovation . Maputo</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-8">
+            <div className="hidden md:flex gap-6 text-sm font-bold text-slate-500 uppercase tracking-wider">
+              <button onClick={() => setView('home')} className={`hover:text-blue-600 transition ${view === 'home' ? 'text-blue-600' : ''}`}>Loja</button>
+              <button onClick={() => setView('about')} className={`hover:text-blue-600 transition ${view === 'about' ? 'text-blue-600' : ''}`}>Sobre Nós</button>
+            </div>
+            <button 
+              onClick={() => setIsCartOpen(true)}
+              className="relative p-3 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-all active:scale-90"
+            >
+              <ShoppingCart className="w-5 h-5 text-slate-700" />
+              {cart.length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border-2 border-white">
+                  {cart.length}
+                </span>
+              )}
             </button>
+          </div>
         </div>
-    </nav>
+      </nav>
 
-    <header class="bg-slate-900 text-white py-16 text-center px-4">
-        <h2 class="text-3xl md:text-5xl font-bold mb-4">Sua Casa Inteligente em Meticais</h2>
-        <p class="text-slate-400 max-w-xl mx-auto mb-8 uppercase tracking-widest text-sm font-semibold">Tecnologia Tuya, Meross e Sonoff</p>
-    </header>
-
-    <main class="container mx-auto px-6 py-12">
-        <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+      {view === 'home' ? (
+        <>
+          {/* SECÇÃO HERO COM IMAGEM DE CABEÇALHO */}
+          <section className="pt-32 pb-20 px-6 relative overflow-hidden">
+            {/* Background Decorativo */}
+            <div className="absolute top-0 left-0 w-full h-full -z-10 opacity-40">
+                <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-blue-200 rounded-full blur-[120px]"></div>
+                <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] bg-slate-200 rounded-full blur-[100px]"></div>
             </div>
-    </main>
 
-    <section class="bg-slate-100 py-12 border-t border-gray-200">
-        <div class="container mx-auto px-6">
-            <h3 class="font-bold text-lg mb-6 flex items-center gap-2"><i class="fa-solid fa-clipboard-list text-blue-600"></i> Gestão de Pedidos Prime Smart</h3>
-            <div class="bg-white rounded-2xl shadow-sm overflow-hidden overflow-x-auto">
-                <table class="w-full text-left text-sm">
-                    <thead class="bg-gray-50 text-gray-500 uppercase font-bold">
-                        <tr>
-                            <th class="p-4">Pedido ID</th>
-                            <th class="p-4">Produtos</th>
-                            <th class="p-4">Total</th>
-                            <th class="p-4">Pagamento</th>
-                            <th class="p-4">Estado</th>
-                        </tr>
-                    </thead>
-                    <tbody id="admin-orders" class="divide-y divide-gray-100">
-                        <tr><td colspan="5" class="p-10 text-center text-gray-400">Aguardando vendas...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </section>
-
-    <div id="cart-modal" class="fixed inset-0 bg-black/60 hidden z-[100] flex justify-end backdrop-blur-sm">
-        <div class="bg-white w-full max-w-md h-full shadow-2xl flex flex-col p-6 overflow-y-auto">
-            <div class="flex justify-between items-center mb-8">
-                <h3 class="text-2xl font-bold">Meu Carrinho</h3>
-                <button onclick="toggleCart()" class="text-gray-400 hover:text-black"><i class="fa-solid fa-xmark text-2xl"></i></button>
-            </div>
-            <div id="cart-items" class="flex-1 space-y-4"></div>
-            <div class="border-t pt-6 mt-6">
-                <div class="flex justify-between text-2xl font-black mb-6">
-                    <span>TOTAL</span>
-                    <span id="cart-total" class="text-blue-600">0 MT</span>
+            <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
+              <div className="space-y-8 animate-in fade-in slide-in-from-left duration-700">
+                <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider">
+                  <Zap className="w-3 h-3" /> Tecnologia de Elite para o seu Lar
                 </div>
-                <div class="grid grid-cols-2 gap-4 mb-6">
-                    <label class="border p-4 rounded-xl cursor-pointer hover:bg-red-50 text-center">
-                        <input type="radio" name="pay" value="M-PESA" class="mb-2 block mx-auto">
-                        <span class="font-bold text-red-600">M-PESA</span>
-                    </label>
-                    <label class="border p-4 rounded-xl cursor-pointer hover:bg-blue-50 text-center">
-                        <input type="radio" name="pay" value="VISA" class="mb-2 block mx-auto">
-                        <span class="font-bold text-blue-800">VISA</span>
-                    </label>
+                <h2 className="text-5xl md:text-7xl font-black tracking-tight text-slate-900 leading-[1.1]">
+                  A Inteligência que a sua <span className="text-blue-600">Casa</span> merece.
+                </h2>
+                <p className="text-lg text-slate-500 max-w-lg leading-relaxed font-medium">
+                  Especialistas em domótica em Moçambique. Automatize segurança, iluminação e conforto com a curadoria Prime Smart.
+                </p>
+                <div className="flex flex-wrap gap-6 text-sm font-bold">
+                   <div className="flex flex-col border-l-2 border-blue-600 pl-4">
+                      <span className="text-slate-400">Suporte Técnico</span>
+                      <span>847875963</span>
+                   </div>
+                   <div className="flex flex-col border-l-2 border-blue-600 pl-4">
+                      <span className="text-slate-400">Comercial</span>
+                      <span>826203489</span>
+                   </div>
                 </div>
-                <button onclick="checkout()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold text-lg hover:bg-blue-700 transition">Finalizar Compra</button>
+              </div>
+              
+              {/* Imagem de Cabeçalho */}
+              <div className="relative group animate-in fade-in slide-in-from-right duration-1000">
+                <div className="absolute -inset-4 bg-gradient-to-tr from-blue-600/30 to-cyan-400/30 rounded-[3rem] opacity-40 blur-3xl group-hover:opacity-60 transition duration-500"></div>
+                <div className="relative overflow-hidden rounded-[2.5rem] shadow-2xl border border-white">
+                  <img 
+                    src="https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&q=80&w=1200" 
+                    alt="Sala de Estar Inteligente Moderna" 
+                    className="w-full h-full object-cover transform transition duration-1000 group-hover:scale-105"
+                  />
+                  {/* Badge de Destaque na Imagem */}
+                  <div className="absolute bottom-6 right-6 bg-white/10 backdrop-blur-xl p-4 rounded-3xl border border-white/20 text-white shadow-2xl">
+                     <div className="flex items-center gap-3">
+                        <div className="p-2 bg-blue-600 rounded-xl">
+                           <Smartphone className="w-5 h-5" />
+                        </div>
+                        <div>
+                           <p className="text-[10px] font-black uppercase tracking-tighter opacity-70">Controlo Total</p>
+                           <p className="text-sm font-black italic leading-none">Na palma da mão</p>
+                        </div>
+                     </div>
+                  </div>
+                </div>
+              </div>
             </div>
-        </div>
-    </div>
+          </section>
 
-    <script>
-        const products = [
-            { id: 1, name: "Fechadura Inteligente Premium WiFi", price: 23000, cat: "Segurança", img: "https://m.media-amazon.com/images/I/61MvUfM+MFL._AC_SL1500_.jpg" },
-            { id: 2, name: "Fechadura Tuya Bluetooth App Prova d'água", price: 16500, cat: "Segurança", img: "https://m.media-amazon.com/images/I/61NfNq9X+1L._AC_SL1500_.jpg" },
-            { id: 3, name: "Raykube K20 Biometria (9 Idiomas)", price: 15000, cat: "Segurança", img: "https://m.media-amazon.com/images/I/51H-v02XqDL._AC_SL1000_.jpg" },
-            { id: 4, name: "Girier Motor Cortina WiFi Tuya", price: 8000, cat: "Motores", img: "https://m.media-amazon.com/images/I/61fIq1FkKDL._AC_SL1200_.jpg" },
-            { id: 5, name: "Zemismart Zigbee Robô Cortina", price: 10500, cat: "Motores", img: "https://m.media-amazon.com/images/I/51qBId-Uq7L._AC_SL1000_.jpg" },
-            { id: 6, name: "Motor Cortina Corrente DIY WiFi", price: 8200, cat: "Motores", img: "https://m.media-amazon.com/images/I/61Z6X-H-2qL._AC_SL1500_.jpg" },
-            { id: 7, name: "Motor Obturador WiFi/Zigbee RF", price: 8000, cat: "Motores", img: "https://m.media-amazon.com/images/I/61r5f8-H4XL._AC_SL1500_.jpg" },
-            { id: 8, name: "Robô Cortina Tuya 3-em-1", price: 10000, cat: "Motores", img: "https://m.media-amazon.com/images/I/61tS-p6BqFL._AC_SL1500_.jpg" },
-            { id: 9, name: "Campainha Vídeo IMOU 2S 5000mAh", price: 12500, cat: "Segurança", img: "https://m.media-amazon.com/images/I/61-mJt3H-eL._AC_SL1500_.jpg" },
-            { id: 10, name: "Câmera MOES Tuya WiFi 4MP HD", price: 3400, cat: "Segurança", img: "https://m.media-amazon.com/images/I/51iBf+X1-QL._AC_SL1000_.jpg" },
-            { id: 11, name: "Meross Homekit Abridor Garagem", price: 2800, cat: "Segurança", img: "https://m.media-amazon.com/images/I/61y8B2XG-SL._AC_SL1500_.jpg" },
-            { id: 12, name: "Sonoff Sensor SNZB-02D LCD", price: 3500, cat: "Sensores", img: "https://m.media-amazon.com/images/I/51y2B09X1XL._AC_SL1000_.jpg" },
-            { id: 13, name: "Meross Matter Sensor Umidade", price: 2800, cat: "Sensores", img: "https://m.media-amazon.com/images/I/51iBf+X1-QL._AC_SL1000_.jpg" },
-            { id: 14, name: "Sensor Porta/Janela Meross Homekit", price: 2600, cat: "Sensores", img: "https://m.media-amazon.com/images/I/51p6BfX1-QL._AC_SL1000_.jpg" },
-            { id: 15, name: "Meross Sensor Vazamento Água", price: 2500, cat: "Sensores", img: "https://m.media-amazon.com/images/I/61y8B2XG-SL._AC_SL1500_.jpg" },
-            { id: 16, name: "Tomada Inteligente MOES Tuya UE", price: 2200, cat: "Energia", img: "https://m.media-amazon.com/images/I/61nN9q9X+1L._AC_SL1500_.jpg" },
-            { id: 17, name: "Conjunto Cama Power Monitor Socs", price: 1700, cat: "Energia", img: "https://m.media-amazon.com/images/I/51iBf+X1-QL._AC_SL1000_.jpg" },
-            { id: 18, name: "Detector Vazamento MOES Zigbee", price: 1500, cat: "Sensores", img: "https://m.media-amazon.com/images/I/61y8B2XG-SL._AC_SL1500_.jpg" },
-            { id: 19, name: "Sensor PIR Corpo Humano Moes", price: 1100, cat: "Sensores", img: "https://m.media-amazon.com/images/I/51iBf+X1-QL._AC_SL1000_.jpg" },
-            { id: 20, name: "Avatto Controle Remoto WiFi IR", price: 1300, cat: "Energia", img: "https://m.media-amazon.com/images/I/61y8B2XG-SL._AC_SL1500_.jpg" }
-        ];
+          {/* GRELHA DE PRODUTOS */}
+          <section className="py-20 px-6 max-w-7xl mx-auto">
+            <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
+              <div>
+                <h3 className="text-3xl font-black tracking-tight uppercase">Catálogo Premium</h3>
+                <p className="text-slate-400 font-medium">Filtre por categoria para encontrar o seu upgrade</p>
+              </div>
+              <div className="flex gap-2 bg-slate-100 p-1.5 rounded-2xl">
+                {categories.map(cat => (
+                  <button 
+                    key={cat} 
+                    onClick={() => setCategory(cat)}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition ${category === cat ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-800'}`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-        let cart = [];
-        let orders = [];
-
-        function render() {
-            const grid = document.getElementById('product-grid');
-            grid.innerHTML = products.map(p => `
-                <div class="bg-white rounded-3xl p-5 product-card border border-gray-100 flex flex-col shadow-sm">
-                    <div class="bg-gray-50 rounded-2xl h-48 mb-4 flex items-center justify-center overflow-hidden img-container">
-                        <img src="${p.img}" alt="${p.name}" class="h-32 hover:scale-110 transition duration-500" onerror="this.src='https://via.placeholder.com/300?text=Prime+Smart'">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+              {filteredProducts.map((p) => (
+                <div key={p.id} className="group bg-white rounded-[2rem] border border-slate-100 p-5 hover:shadow-2xl hover:shadow-blue-900/5 transition-all duration-500">
+                  <div className="aspect-square bg-slate-50 rounded-[1.5rem] overflow-hidden mb-6 relative">
+                    <img 
+                      src={p.img} 
+                      alt={p.name} 
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                    />
+                    <div className="absolute top-3 left-3">
+                       <span className="bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-black uppercase text-slate-700 shadow-sm">
+                         {p.cat}
+                       </span>
                     </div>
-                    <span class="category-pill text-blue-600 mb-2">${p.cat}</span>
-                    <h4 class="font-bold text-slate-800 text-sm h-10 mb-4">${p.name}</h4>
-                    <div class="mt-auto flex justify-between items-center">
-                        <span class="text-lg font-black text-slate-900">${p.price.toLocaleString()} MT</span>
-                        <button onclick="addToCart(${p.id})" class="bg-blue-600 text-white w-10 h-10 rounded-xl hover:bg-slate-900 transition shadow-lg"><i class="fa-solid fa-plus"></i></button>
+                  </div>
+                  <div className="space-y-2">
+                    <h4 className="font-bold text-slate-800 line-clamp-1 group-hover:text-blue-600 transition-colors">
+                      {p.name}
+                    </h4>
+                    <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed min-h-[32px]">
+                      {p.desc}
+                    </p>
+                    <div className="pt-4 flex justify-between items-center">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-bold text-slate-300 uppercase tracking-tighter italic">Disponível</span>
+                        <span className="text-xl font-black text-slate-900 tracking-tight">{p.price.toLocaleString()} <span className="text-sm font-bold text-blue-600">MT</span></span>
+                      </div>
+                      <button 
+                        onClick={() => addToCart(p)}
+                        className="bg-slate-900 text-white w-12 h-12 rounded-2xl flex items-center justify-center hover:bg-blue-600 transition-all active:scale-90"
+                      >
+                        <Plus className="w-6 h-6" />
+                      </button>
                     </div>
+                  </div>
                 </div>
-            `).join('');
-        }
-
-        function addToCart(id) {
-            const p = products.find(x => x.id === id);
-            cart.push(p);
-            updateCart();
-        }
-
-        function toggleCart() { document.getElementById('cart-modal').classList.toggle('hidden'); }
-
-        function updateCart() {
-            document.getElementById('cart-count').innerText = cart.length;
-            const items = document.getElementById('cart-items');
-            items.innerHTML = cart.map((p, i) => `
-                <div class="flex justify-between items-center bg-gray-50 p-3 rounded-xl">
-                    <span class="text-sm font-bold truncate w-40">${p.name}</span>
-                    <div class="flex items-center gap-4">
-                        <span class="font-bold">${p.price} MT</span>
-                        <button onclick="removeItem(${i})" class="text-red-400"><i class="fa-solid fa-trash"></i></button>
+              ))}
+            </div>
+          </section>
+        </>
+      ) : (
+        /* SECÇÃO SOBRE NÓS */
+        <section className="pt-32 pb-20 px-6 max-w-7xl mx-auto space-y-24">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <div className="space-y-6">
+              <div className="inline-flex items-center gap-2 text-blue-600 font-bold uppercase text-xs tracking-[0.2em]">
+                <Info className="w-4 h-4" /> Nossa História
+              </div>
+              <h2 className="text-5xl font-black tracking-tighter leading-tight">Prime Smart: <br/> Redefinindo o Morar em Moçambique.</h2>
+              <p className="text-slate-500 leading-relaxed font-medium">
+                Nascida em Maputo, a Prime Smart não é apenas uma loja; é o resultado de uma visão de futuro onde a tecnologia serve a segurança e o conforto da família moçambicana. Fundada por entusiastas de tecnologia, acreditamos que cada casa pode ser um santuário inteligente.
+              </p>
+              <div className="grid grid-cols-2 gap-8 pt-6">
+                <div className="space-y-2">
+                  <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600">
+                    <Target className="w-6 h-6" />
+                  </div>
+                  <h4 className="font-black text-slate-900 uppercase text-xs tracking-wider">Missão</h4>
+                  <p className="text-xs text-slate-400 font-medium">Democratizar o acesso à automação residencial de luxo, garantindo segurança e eficiência em Moçambique.</p>
+                </div>
+                <div className="space-y-2">
+                  <div className="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center text-white">
+                    <Eye className="w-6 h-6" />
+                  </div>
+                  <h4 className="font-black text-slate-900 uppercase text-xs tracking-wider">Visão</h4>
+                  <p className="text-xs text-slate-400 font-medium">Ser a referência número um em Smart Homes na África Austral, liderando a inovação em segurança biométrica.</p>
+                </div>
+              </div>
+            </div>
+            <div className="relative">
+               <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=800" className="rounded-[3rem] shadow-2xl rotate-2" alt="Escritório" />
+               <div className="absolute -bottom-10 -left-10 bg-white p-8 rounded-3xl shadow-xl border border-slate-50">
+                  <div className="flex gap-4 items-center">
+                    <div className="w-14 h-14 bg-blue-600 rounded-full flex items-center justify-center text-white font-black text-xl italic">PS</div>
+                    <div>
+                      <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Desde</p>
+                      <p className="text-2xl font-black">2026</p>
                     </div>
+                  </div>
+               </div>
+            </div>
+          </div>
+
+          {/* FUNDADORES */}
+          <div className="space-y-12">
+            <div className="text-center space-y-2">
+              <h3 className="text-3xl font-black uppercase tracking-tight">Os Fundadores</h3>
+              <p className="text-slate-400 font-medium">A mente e o coração por trás da Prime Smart</p>
+            </div>
+            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+              <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 text-center space-y-4 hover:shadow-xl transition group">
+                <div className="w-24 h-24 bg-slate-100 rounded-3xl mx-auto flex items-center justify-center text-slate-300 group-hover:bg-blue-600 group-hover:text-white transition-all duration-500">
+                  <User size={48} />
                 </div>
-            `).join('');
-            const total = cart.reduce((acc, p) => acc + p.price, 0);
-            document.getElementById('cart-total').innerText = total.toLocaleString() + " MT";
-        }
+                <div>
+                  <h4 className="text-xl font-black text-slate-900">Hanz Domingos</h4>
+                  <p className="text-blue-600 text-xs font-bold uppercase tracking-widest">Co-Founder & CTO</p>
+                </div>
+                <p className="text-sm text-slate-400 font-medium italic">"A tecnologia só faz sentido quando simplifica a vida e protege o que mais amamos."</p>
+              </div>
+              <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 text-center space-y-4 hover:shadow-xl transition group">
+                <div className="w-24 h-24 bg-slate-100 rounded-3xl mx-auto flex items-center justify-center text-slate-300 group-hover:bg-blue-600 group-hover:text-white transition-all duration-500">
+                  <User size={48} />
+                </div>
+                <div>
+                  <h4 className="text-xl font-black text-slate-900">Quim Machava</h4>
+                  <p className="text-blue-600 text-xs font-bold uppercase tracking-widest">Co-Founder & CEO</p>
+                </div>
+                <p className="text-sm text-slate-400 font-medium italic">"O nosso objetivo é trazer o luxo da automação global para o contexto local de Maputo."</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
-        function removeItem(i) { cart.splice(i, 1); updateCart(); }
+      {/* DASHBOARD DE OPERAÇÕES */}
+      <section className="bg-slate-900 py-24 px-6 text-white overflow-hidden relative">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/10 blur-[120px] rounded-full"></div>
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
+            <div>
+              <h3 className="text-3xl font-black tracking-tight uppercase">Fluxo de Operações</h3>
+              <p className="text-slate-400 font-medium">Sincronização em tempo real</p>
+            </div>
+            <div className="flex gap-8">
+              <div className="text-center">
+                <p className="text-4xl font-black text-blue-500">{orders.length}</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Pedidos</p>
+              </div>
+              <div className="text-center">
+                <p className="text-4xl font-black text-white">{orders.reduce((a,b)=>a+b.total,0).toLocaleString()}</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Total (MT)</p>
+              </div>
+            </div>
+          </div>
 
-        function checkout() {
-            if(cart.length === 0) return alert("Carrinho vazio!");
-            const pay = document.querySelector('input[name="pay"]:checked')?.value;
-            if(!pay) return alert("Escolha M-Pesa ou Visa!");
-
-            const order = {
-                id: Math.floor(Math.random()*90000),
-                desc: `${cart.length} produtos`,
-                total: cart.reduce((a, b) => a + b.price, 0),
-                pay: pay
-            };
-            orders.unshift(order);
-            updateAdmin();
-            cart = [];
-            updateCart();
-            toggleCart();
-            alert("Pedido Enviado!");
-        }
-
-        function updateAdmin() {
-            document.getElementById('admin-orders').innerHTML = orders.map(o => `
-                <tr class="hover:bg-gray-50">
-                    <td class="p-4 font-bold text-blue-600">#${o.id}</td>
-                    <td class="p-4">${o.desc}</td>
-                    <td class="p-4 font-black">${o.total} MT</td>
-                    <td class="p-4"><span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold">${o.pay}</span></td>
-                    <td class="p-4"><span class="text-green-500 font-bold italic">Confirmado</span></td>
+          <div className="bg-white/5 backdrop-blur-md rounded-[2.5rem] border border-white/10 overflow-hidden overflow-x-auto">
+            <table className="w-full text-left min-w-[600px]">
+              <thead>
+                <tr className="border-b border-white/10 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                  <th className="px-8 py-6">ID Operação</th>
+                  <th className="px-8 py-6">Hora</th>
+                  <th className="px-8 py-6">Itens</th>
+                  <th className="px-8 py-6">Total</th>
+                  <th className="px-8 py-6">Canal</th>
+                  <th className="px-8 py-6">Status</th>
                 </tr>
-            `).join('');
-        }
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {orders.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" className="px-8 py-20 text-center text-slate-600 font-medium italic">
+                      Aguardando processamento de novas transações...
+                    </td>
+                  </tr>
+                ) : (
+                  orders.map(order => (
+                    <tr key={order.id} className="hover:bg-white/5 transition-colors">
+                      <td className="px-8 py-6 font-mono text-blue-400">#TRX-{order.id}</td>
+                      <td className="px-8 py-6 text-sm font-medium">{order.date}</td>
+                      <td className="px-8 py-6 text-sm">{order.items} uni.</td>
+                      <td className="px-8 py-6 font-bold">{order.total.toLocaleString()} MT</td>
+                      <td className="px-8 py-6 font-black text-xs">{order.method}</td>
+                      <td className="px-8 py-6">
+                        <div className="flex items-center gap-2 text-green-400 font-bold text-[10px] uppercase">
+                          <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></div>
+                          Liquidado
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
 
-        render();
-    </script>
-</body>
-</html>
+      {/* CARRINHO */}
+      {isCartOpen && (
+        <div className="fixed inset-0 z-[100] flex justify-end">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsCartOpen(false)}></div>
+          <div className="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col p-8 animate-in slide-in-from-right-full">
+            <div className="flex justify-between items-center mb-10">
+              <div>
+                <h3 className="text-2xl font-black">Carrinho</h3>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{cart.length} itens</p>
+              </div>
+              <button onClick={() => setIsCartOpen(false)} className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-400"><Plus className="w-6 h-6 rotate-45" /></button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto space-y-6">
+              {cart.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-center space-y-4">
+                  <ShoppingCart className="w-12 h-12 text-slate-100" />
+                  <p className="text-slate-400 font-bold italic">Nada por aqui ainda.</p>
+                </div>
+              ) : (
+                cart.map((item) => (
+                  <div key={item.cartId} className="flex gap-4 group bg-slate-50 p-3 rounded-2xl border border-transparent hover:border-blue-100 transition">
+                    <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0">
+                      <img src={item.img} alt={item.name} className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-xs text-slate-800 truncate">{item.name}</h4>
+                      <p className="text-blue-600 font-black text-sm">{item.price.toLocaleString()} MT</p>
+                    </div>
+                    <button onClick={() => removeFromCart(item.cartId)} className="p-2 text-slate-300 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {cart.length > 0 && (
+              <div className="pt-8 border-t border-slate-100 space-y-6">
+                <div className="flex justify-between items-end">
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Total</span>
+                  <span className="text-3xl font-black text-slate-900 tracking-tighter">{total.toLocaleString()} MT</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <button onClick={() => processOrder('M-PESA')} className="py-4 rounded-2xl border-2 border-red-500 bg-red-50 text-red-600 font-black text-[10px] tracking-widest uppercase hover:bg-red-500 hover:text-white transition">M-Pesa</button>
+                  <button onClick={() => processOrder('VISA')} className="py-4 rounded-2xl border-2 border-blue-600 bg-blue-50 text-blue-600 font-black text-[10px] tracking-widest uppercase hover:bg-blue-600 hover:text-white transition">Visa / Izi</button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* RODAPÉ */}
+      <footer className="py-20 px-6 border-t border-slate-100 bg-white">
+        <div className="max-w-7xl mx-auto grid md:grid-cols-4 gap-12">
+          <div className="col-span-2 space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="bg-slate-900 p-2 rounded-xl">
+                <Cpu className="text-white w-5 h-5" />
+              </div>
+              <h1 className="text-xl font-black tracking-tighter leading-none">PRIME<span className="text-blue-600">SMART</span></h1>
+            </div>
+            <p className="text-slate-400 font-medium max-w-sm leading-relaxed">
+              Inovação em Domótica. Transformamos a sua residência num espaço inteligente, seguro e eficiente.
+            </p>
+          </div>
+          <div>
+            <h5 className="font-black text-slate-900 uppercase text-[10px] tracking-[0.2em] mb-6 underline decoration-blue-600 underline-offset-8">Suporte Tech</h5>
+            <ul className="space-y-4 text-sm font-bold text-slate-500">
+              <li className="flex items-center gap-2 text-slate-900"><Phone className="w-4 h-4 text-blue-600"/> 847875963</li>
+              <li className="flex items-center gap-2 text-slate-900"><Phone className="w-4 h-4 text-blue-600"/> 826203489</li>
+              <li className="flex items-center gap-2"><MapPin className="w-4 h-4 text-blue-600"/> Maputo, Mozambique</li>
+            </ul>
+          </div>
+          <div>
+            <h5 className="font-black text-slate-900 uppercase text-[10px] tracking-[0.2em] mb-6 underline decoration-blue-600 underline-offset-8">Links Úteis</h5>
+            <ul className="space-y-4 text-sm font-bold text-slate-500">
+              <li className="hover:text-blue-600 cursor-pointer" onClick={() => setView('about')}>A Nossa Equipa</li>
+              <li className="hover:text-blue-600 cursor-pointer">Garantia 1 Ano</li>
+              <li className="hover:text-blue-600 cursor-pointer">Termos de Serviço</li>
+            </ul>
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto pt-20 flex flex-col md:row justify-between items-center gap-4 text-[10px] font-black uppercase tracking-widest text-slate-300">
+           <span>© 2026 Prime Smart Group . Lda | Maputo - Moçambique</span>
+           <div className="flex gap-6">
+             <span className="flex items-center gap-1"><ShieldCheck className="w-3 h-3"/> Pagamento Seguro</span>
+             <span>Inovação Contínua</span>
+           </div>
+        </div>
+      </footer>
+    </div>
+  );
+};
+
+export default App;
