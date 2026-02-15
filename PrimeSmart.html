@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prime Smart | Automação em Moçambique</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .product-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .product-card:hover { transform: translateY(-8px); shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1); }
+        .img-container img { object-fit: contain; mix-blend-mode: multiply; }
+        .category-pill { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+    </style>
+</head>
+<body class="bg-gray-50 text-slate-900 font-sans">
+
+    <nav class="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white">
+                    <i class="fa-solid fa-bolt-lightning text-xl"></i>
+                </div>
+                <h1 class="text-xl font-black text-slate-800 tracking-tighter">PRIME<span class="text-blue-600">SMART</span></h1>
+            </div>
+            <button onclick="toggleCart()" class="relative p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition">
+                <i class="fa-solid fa-cart-shopping text-slate-700"></i>
+                <span id="cart-count" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full border-2 border-white">0</span>
+            </button>
+        </div>
+    </nav>
+
+    <header class="bg-slate-900 text-white py-16 text-center px-4">
+        <h2 class="text-3xl md:text-5xl font-bold mb-4">Sua Casa Inteligente em Meticais</h2>
+        <p class="text-slate-400 max-w-xl mx-auto mb-8 uppercase tracking-widest text-sm font-semibold">Tecnologia Tuya, Meross e Sonoff</p>
+    </header>
+
+    <main class="container mx-auto px-6 py-12">
+        <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+            </div>
+    </main>
+
+    <section class="bg-slate-100 py-12 border-t border-gray-200">
+        <div class="container mx-auto px-6">
+            <h3 class="font-bold text-lg mb-6 flex items-center gap-2"><i class="fa-solid fa-clipboard-list text-blue-600"></i> Gestão de Pedidos Prime Smart</h3>
+            <div class="bg-white rounded-2xl shadow-sm overflow-hidden overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-gray-50 text-gray-500 uppercase font-bold">
+                        <tr>
+                            <th class="p-4">Pedido ID</th>
+                            <th class="p-4">Produtos</th>
+                            <th class="p-4">Total</th>
+                            <th class="p-4">Pagamento</th>
+                            <th class="p-4">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-orders" class="divide-y divide-gray-100">
+                        <tr><td colspan="5" class="p-10 text-center text-gray-400">Aguardando vendas...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <div id="cart-modal" class="fixed inset-0 bg-black/60 hidden z-[100] flex justify-end backdrop-blur-sm">
+        <div class="bg-white w-full max-w-md h-full shadow-2xl flex flex-col p-6 overflow-y-auto">
+            <div class="flex justify-between items-center mb-8">
+                <h3 class="text-2xl font-bold">Meu Carrinho</h3>
+                <button onclick="toggleCart()" class="text-gray-400 hover:text-black"><i class="fa-solid fa-xmark text-2xl"></i></button>
+            </div>
+            <div id="cart-items" class="flex-1 space-y-4"></div>
+            <div class="border-t pt-6 mt-6">
+                <div class="flex justify-between text-2xl font-black mb-6">
+                    <span>TOTAL</span>
+                    <span id="cart-total" class="text-blue-600">0 MT</span>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <label class="border p-4 rounded-xl cursor-pointer hover:bg-red-50 text-center">
+                        <input type="radio" name="pay" value="M-PESA" class="mb-2 block mx-auto">
+                        <span class="font-bold text-red-600">M-PESA</span>
+                    </label>
+                    <label class="border p-4 rounded-xl cursor-pointer hover:bg-blue-50 text-center">
+                        <input type="radio" name="pay" value="VISA" class="mb-2 block mx-auto">
+                        <span class="font-bold text-blue-800">VISA</span>
+                    </label>
+                </div>
+                <button onclick="checkout()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold text-lg hover:bg-blue-700 transition">Finalizar Compra</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const products = [
+            { id: 1, name: "Fechadura Inteligente Premium WiFi", price: 23000, cat: "Segurança", img: "https://m.media-amazon.com/images/I/61MvUfM+MFL._AC_SL1500_.jpg" },
+            { id: 2, name: "Fechadura Tuya Bluetooth App Prova d'água", price: 16500, cat: "Segurança", img: "https://m.media-amazon.com/images/I/61NfNq9X+1L._AC_SL1500_.jpg" },
+            { id: 3, name: "Raykube K20 Biometria (9 Idiomas)", price: 15000, cat: "Segurança", img: "https://m.media-amazon.com/images/I/51H-v02XqDL._AC_SL1000_.jpg" },
+            { id: 4, name: "Girier Motor Cortina WiFi Tuya", price: 8000, cat: "Motores", img: "https://m.media-amazon.com/images/I/61fIq1FkKDL._AC_SL1200_.jpg" },
+            { id: 5, name: "Zemismart Zigbee Robô Cortina", price: 10500, cat: "Motores", img: "https://m.media-amazon.com/images/I/51qBId-Uq7L._AC_SL1000_.jpg" },
+            { id: 6, name: "Motor Cortina Corrente DIY WiFi", price: 8200, cat: "Motores", img: "https://m.media-amazon.com/images/I/61Z6X-H-2qL._AC_SL1500_.jpg" },
+            { id: 7, name: "Motor Obturador WiFi/Zigbee RF", price: 8000, cat: "Motores", img: "https://m.media-amazon.com/images/I/61r5f8-H4XL._AC_SL1500_.jpg" },
+            { id: 8, name: "Robô Cortina Tuya 3-em-1", price: 10000, cat: "Motores", img: "https://m.media-amazon.com/images/I/61tS-p6BqFL._AC_SL1500_.jpg" },
+            { id: 9, name: "Campainha Vídeo IMOU 2S 5000mAh", price: 12500, cat: "Segurança", img: "https://m.media-amazon.com/images/I/61-mJt3H-eL._AC_SL1500_.jpg" },
+            { id: 10, name: "Câmera MOES Tuya WiFi 4MP HD", price: 3400, cat: "Segurança", img: "https://m.media-amazon.com/images/I/51iBf+X1-QL._AC_SL1000_.jpg" },
+            { id: 11, name: "Meross Homekit Abridor Garagem", price: 2800, cat: "Segurança", img: "https://m.media-amazon.com/images/I/61y8B2XG-SL._AC_SL1500_.jpg" },
+            { id: 12, name: "Sonoff Sensor SNZB-02D LCD", price: 3500, cat: "Sensores", img: "https://m.media-amazon.com/images/I/51y2B09X1XL._AC_SL1000_.jpg" },
+            { id: 13, name: "Meross Matter Sensor Umidade", price: 2800, cat: "Sensores", img: "https://m.media-amazon.com/images/I/51iBf+X1-QL._AC_SL1000_.jpg" },
+            { id: 14, name: "Sensor Porta/Janela Meross Homekit", price: 2600, cat: "Sensores", img: "https://m.media-amazon.com/images/I/51p6BfX1-QL._AC_SL1000_.jpg" },
+            { id: 15, name: "Meross Sensor Vazamento Água", price: 2500, cat: "Sensores", img: "https://m.media-amazon.com/images/I/61y8B2XG-SL._AC_SL1500_.jpg" },
+            { id: 16, name: "Tomada Inteligente MOES Tuya UE", price: 2200, cat: "Energia", img: "https://m.media-amazon.com/images/I/61nN9q9X+1L._AC_SL1500_.jpg" },
+            { id: 17, name: "Conjunto Cama Power Monitor Socs", price: 1700, cat: "Energia", img: "https://m.media-amazon.com/images/I/51iBf+X1-QL._AC_SL1000_.jpg" },
+            { id: 18, name: "Detector Vazamento MOES Zigbee", price: 1500, cat: "Sensores", img: "https://m.media-amazon.com/images/I/61y8B2XG-SL._AC_SL1500_.jpg" },
+            { id: 19, name: "Sensor PIR Corpo Humano Moes", price: 1100, cat: "Sensores", img: "https://m.media-amazon.com/images/I/51iBf+X1-QL._AC_SL1000_.jpg" },
+            { id: 20, name: "Avatto Controle Remoto WiFi IR", price: 1300, cat: "Energia", img: "https://m.media-amazon.com/images/I/61y8B2XG-SL._AC_SL1500_.jpg" }
+        ];
+
+        let cart = [];
+        let orders = [];
+
+        function render() {
+            const grid = document.getElementById('product-grid');
+            grid.innerHTML = products.map(p => `
+                <div class="bg-white rounded-3xl p-5 product-card border border-gray-100 flex flex-col shadow-sm">
+                    <div class="bg-gray-50 rounded-2xl h-48 mb-4 flex items-center justify-center overflow-hidden img-container">
+                        <img src="${p.img}" alt="${p.name}" class="h-32 hover:scale-110 transition duration-500" onerror="this.src='https://via.placeholder.com/300?text=Prime+Smart'">
+                    </div>
+                    <span class="category-pill text-blue-600 mb-2">${p.cat}</span>
+                    <h4 class="font-bold text-slate-800 text-sm h-10 mb-4">${p.name}</h4>
+                    <div class="mt-auto flex justify-between items-center">
+                        <span class="text-lg font-black text-slate-900">${p.price.toLocaleString()} MT</span>
+                        <button onclick="addToCart(${p.id})" class="bg-blue-600 text-white w-10 h-10 rounded-xl hover:bg-slate-900 transition shadow-lg"><i class="fa-solid fa-plus"></i></button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function addToCart(id) {
+            const p = products.find(x => x.id === id);
+            cart.push(p);
+            updateCart();
+        }
+
+        function toggleCart() { document.getElementById('cart-modal').classList.toggle('hidden'); }
+
+        function updateCart() {
+            document.getElementById('cart-count').innerText = cart.length;
+            const items = document.getElementById('cart-items');
+            items.innerHTML = cart.map((p, i) => `
+                <div class="flex justify-between items-center bg-gray-50 p-3 rounded-xl">
+                    <span class="text-sm font-bold truncate w-40">${p.name}</span>
+                    <div class="flex items-center gap-4">
+                        <span class="font-bold">${p.price} MT</span>
+                        <button onclick="removeItem(${i})" class="text-red-400"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                </div>
+            `).join('');
+            const total = cart.reduce((acc, p) => acc + p.price, 0);
+            document.getElementById('cart-total').innerText = total.toLocaleString() + " MT";
+        }
+
+        function removeItem(i) { cart.splice(i, 1); updateCart(); }
+
+        function checkout() {
+            if(cart.length === 0) return alert("Carrinho vazio!");
+            const pay = document.querySelector('input[name="pay"]:checked')?.value;
+            if(!pay) return alert("Escolha M-Pesa ou Visa!");
+
+            const order = {
+                id: Math.floor(Math.random()*90000),
+                desc: `${cart.length} produtos`,
+                total: cart.reduce((a, b) => a + b.price, 0),
+                pay: pay
+            };
+            orders.unshift(order);
+            updateAdmin();
+            cart = [];
+            updateCart();
+            toggleCart();
+            alert("Pedido Enviado!");
+        }
+
+        function updateAdmin() {
+            document.getElementById('admin-orders').innerHTML = orders.map(o => `
+                <tr class="hover:bg-gray-50">
+                    <td class="p-4 font-bold text-blue-600">#${o.id}</td>
+                    <td class="p-4">${o.desc}</td>
+                    <td class="p-4 font-black">${o.total} MT</td>
+                    <td class="p-4"><span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold">${o.pay}</span></td>
+                    <td class="p-4"><span class="text-green-500 font-bold italic">Confirmado</span></td>
+                </tr>
+            `).join('');
+        }
+
+        render();
+    </script>
+</body>
+</html>
