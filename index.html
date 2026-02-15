@@ -1,352 +1,274 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { 
-  ShoppingCart, 
-  Plus, 
-  Trash2, 
-  Smartphone, 
-  Cpu, 
-  CheckCircle2,
-  Zap,
-  Target,
-  Eye,
-  Info,
-  Phone,
-  MapPin,
-  ShieldCheck,
-  User,
-  Terminal,
-  ChevronUp,
-  ChevronDown,
-  X,
-  AlertCircle
-} from 'lucide-react';
-
-// --- DATABASE DE PRODUTOS ---
-const INITIAL_PRODUCTS = [
-  { id: 1, name: "Fechadura Biométrica Titanium WiFi", price: 23000, cat: "Segurança", desc: "Acesso via digital, senha e app. O ápice da segurança residencial.", img: "https://images.unsplash.com/photo-1558002038-1091a5759232?auto=format&fit=crop&q=80&w=400" },
-  { id: 2, name: "Smart Lock Tuya Ultra WaterProof", price: 16500, cat: "Segurança", desc: "Resistência total à chuva com tecnologia RFID e Bluetooth.", img: "https://images.unsplash.com/photo-1639815188546-c43c240ff4df?auto=format&fit=crop&q=80&w=400" },
-  { id: 4, name: "Motor de Cortina Girier WiFi Silent", price: 8000, cat: "Conforto", desc: "Automatize suas persianas com controle de voz via Alexa.", img: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&q=80&w=400" },
-  { id: 9, name: "Video Doorbell IMOU 2S Premium", price: 12500, cat: "Segurança", desc: "Visão Panorâmica 30° e detecção humana com IA.", img: "https://images.unsplash.com/photo-1621259182978-f09317796934?auto=format&fit=crop&q=80&w=400" },
-  { id: 10, name: "Câmera MOES Pan/Tilt 4MP UltraHD", price: 3400, cat: "Segurança", desc: "Patrulha panorâmica e visão noturna infravermelha.", img: "https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&q=80&w=400" },
-  { id: 12, name: "Sensor Temp Sonoff Zigbee LCD", price: 3500, cat: "Sensores", desc: "Monitorização climática precisa com ecrã de 2.5 polegadas.", img: "https://images.unsplash.com/photo-1594322436404-5a0526db4d13?auto=format&fit=crop&q=80&w=400" },
-  { id: 16, name: "Tomada MOES Zigbee PowerMonitor", price: 2200, cat: "Energia", desc: "Controle gastos e agende horários para seus aparelhos.", img: "https://images.unsplash.com/photo-1558489580-faa74691fdc5?auto=format&fit=crop&q=80&w=400" },
-  { id: 20, name: "Controle Universal Avatto IR WiFi", price: 1300, cat: "Energia", desc: "Substitua todos os seus comandos por um único app.", img: "https://images.unsplash.com/photo-1527011046414-4781f1f94f8c?auto=format&fit=crop&q=80&w=400" }
-];
-
-const App = () => {
-  const [view, setView] = useState('home'); 
-  const [cart, setCart] = useState([]);
-  const [isCartOpen, setIsCartOpen] = useState(false);
-  const [category, setCategory] = useState('Todos');
-  const [orders, setOrders] = useState([]);
-  const [notification, setNotification] = useState(null);
-  
-  // Lista de categorias para os filtros
-  const categories = ['Todos', 'Segurança', 'Conforto', 'Sensores', 'Energia'];
-  
-  // Estado para o Console Customizado
-  const [logs, setLogs] = useState([{ time: new Date().toLocaleTimeString(), msg: "Sistema Prime Smart iniciado em modo 2026.", type: 'info' }]);
-  const [isConsoleOpen, setIsConsoleOpen] = useState(false);
-  const scrollRef = useRef(null);
-
-  const addLog = (msg, type = 'info') => {
-    setLogs(prev => [...prev, { time: new Date().toLocaleTimeString(), msg, type }]);
-  };
-
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [logs, isConsoleOpen]);
-
-  const addToCart = (product) => {
-    setCart([...cart, { ...product, cartId: Math.random() }]);
-    setNotification(`${product.name} adicionado!`);
-    addLog(`Produto adicionado: ${product.name}`, 'success');
-    setTimeout(() => setNotification(null), 3000);
-  };
-
-  const removeFromCart = (cartId) => {
-    const item = cart.find(i => i.cartId === cartId);
-    setCart(cart.filter(item => item.cartId !== cartId));
-    addLog(`Removido do carrinho: ${item?.name}`, 'warning');
-  };
-
-  const total = cart.reduce((acc, item) => acc + item.price, 0);
-
-  const processOrder = (method) => {
-    if (cart.length === 0) return;
-    const newOrder = {
-      id: Math.floor(Math.random() * 90000) + 10000,
-      date: new Date().toLocaleTimeString(),
-      itemsCount: cart.length,
-      totalValue: total,
-      method: method,
-      status: 'Confirmado'
-    };
-    setOrders([newOrder, ...orders]);
-    addLog(`Pedido #TRX-${newOrder.id} processado via ${method}. Total: ${total} MT`, 'success');
-    setCart([]);
-    setIsCartOpen(false);
-    setNotification("Pedido realizado com sucesso!");
-    setTimeout(() => setNotification(null), 5000);
-  };
-
-  const filteredProducts = category === 'Todos' 
-    ? INITIAL_PRODUCTS 
-    : INITIAL_PRODUCTS.filter(p => p.cat === category);
-
-  return (
-    <div className="min-h-screen bg-[#fafafa] text-slate-900 font-sans pb-12">
-      
-      {/* NOTIFICAÇÃO */}
-      {notification && (
-        <div className="fixed top-24 right-6 z-[100] bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3">
-          <CheckCircle2 className="text-blue-400 w-5 h-5" />
-          <span className="font-medium text-sm">{notification}</span>
-        </div>
-      )}
-
-      {/* BARRA DE NAVEGAÇÃO */}
-      <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl border-b border-slate-100 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-3 group cursor-pointer" onClick={() => setView('home')}>
-            <div className="bg-slate-900 p-2.5 rounded-2xl group-hover:bg-blue-600 transition-colors">
-              <Cpu className="text-white w-6 h-6" />
-            </div>
-            <div>
-              <h1 className="text-xl font-black tracking-tighter leading-none">PRIME<span className="text-blue-600">SMART</span></h1>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Innovation . Maputo</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-8">
-            <div className="hidden md:flex gap-6 text-sm font-bold text-slate-500 uppercase tracking-wider">
-              <button onClick={() => { setView('home'); addLog("Navegou para: Loja"); }} className={`hover:text-blue-600 transition ${view === 'home' ? 'text-blue-600' : ''}`}>Loja</button>
-              <button onClick={() => { setView('about'); addLog("Navegou para: Sobre Nós"); }} className={`hover:text-blue-600 transition ${view === 'about' ? 'text-blue-600' : ''}`}>Sobre Nós</button>
-            </div>
-            <button 
-              onClick={() => setIsCartOpen(true)}
-              className="relative p-3 bg-slate-50 rounded-2xl hover:bg-slate-100 transition-all active:scale-95"
-            >
-              <ShoppingCart className="w-5 h-5 text-slate-700" />
-              {cart.length > 0 && (
-                <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full border-2 border-white">
-                  {cart.length}
-                </span>
-              )}
-            </button>
-          </div>
-        </div>
-      </nav>
-
-      {view === 'home' ? (
-        <>
-          {/* HERO SECTION COM IMAGEM */}
-          <section className="pt-32 pb-12 px-6">
-            <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
-              <div className="space-y-8">
-                <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider">
-                  <Zap className="w-3 h-3" /> Tecnologia de Elite para o seu Lar
-                </div>
-                <h2 className="text-5xl md:text-7xl font-black tracking-tight text-slate-900 leading-[1.1]">
-                  A Inteligência que a sua <span className="text-blue-600">Casa</span> merece.
-                </h2>
-                <p className="text-lg text-slate-500 max-w-lg leading-relaxed font-medium">
-                  Especialistas em domótica em Moçambique. Automatize segurança, iluminação e conforto com a curadoria Prime Smart Luxury.
-                </p>
-                <div className="flex flex-wrap gap-6 text-sm font-bold">
-                   <div className="flex flex-col border-l-2 border-blue-600 pl-4">
-                      <span className="text-slate-400 font-medium">Suporte Técnico</span>
-                      <span>847875963</span>
-                   </div>
-                   <div className="flex flex-col border-l-2 border-blue-600 pl-4">
-                      <span className="text-slate-400 font-medium">Comercial</span>
-                      <span>826203489</span>
-                   </div>
-                </div>
-              </div>
-              
-              <div className="relative group">
-                <div className="absolute -inset-4 bg-blue-600/10 rounded-[3rem] blur-3xl transition duration-500"></div>
-                <div className="relative overflow-hidden rounded-[2.5rem] shadow-2xl border border-white">
-                  <img 
-                    src="https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&q=80&w=1200" 
-                    alt="Interior de Casa Inteligente de Luxo" 
-                    className="w-full aspect-[4/3] object-cover"
-                  />
-                  <div className="absolute bottom-6 right-6 bg-white/90 backdrop-blur-md p-4 rounded-3xl shadow-2xl">
-                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-blue-600 rounded-xl text-white">
-                           <Smartphone className="w-5 h-5" />
-                        </div>
-                        <div>
-                           <p className="text-[10px] font-black uppercase tracking-tighter text-slate-400">Desde 2026</p>
-                           <p className="text-sm font-black text-slate-900 italic leading-none">Maputo Smart Life</p>
-                        </div>
-                     </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* CATALOGO */}
-          <section className="py-20 px-6 max-w-7xl mx-auto">
-            <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
-              <div>
-                <h3 className="text-3xl font-black tracking-tight uppercase">Catálogo Premium</h3>
-              </div>
-              <div className="flex gap-2 bg-slate-100 p-1.5 rounded-2xl overflow-x-auto">
-                {categories.map(cat => (
-                  <button 
-                    key={cat} 
-                    onClick={() => { setCategory(cat); addLog(`Filtro aplicado: ${cat}`); }}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${category === cat ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-800'}`}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-              {filteredProducts.map((p) => (
-                <div key={p.id} className="group bg-white rounded-[2rem] border border-slate-100 p-5 hover:shadow-2xl hover:shadow-blue-900/5 transition-all duration-300">
-                  <div className="aspect-square bg-slate-50 rounded-[1.5rem] overflow-hidden mb-6 relative">
-                    <img src={p.img} alt={p.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                    <div className="absolute top-3 left-3">
-                       <span className="bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-black uppercase text-slate-700">{p.cat}</span>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <h4 className="font-bold text-slate-800 truncate">{p.name}</h4>
-                    <p className="text-xs text-slate-400 line-clamp-2 min-h-[32px]">{p.desc}</p>
-                    <div className="pt-4 flex justify-between items-center">
-                      <div className="flex flex-col">
-                        <span className="text-xl font-black text-slate-900">{p.price.toLocaleString()} <span className="text-sm font-bold text-blue-600">MT</span></span>
-                      </div>
-                      <button 
-                        onClick={() => addToCart(p)}
-                        className="bg-slate-900 text-white w-12 h-12 rounded-2xl flex items-center justify-center hover:bg-blue-600 active:scale-90 transition-all"
-                      >
-                        <Plus className="w-6 h-6" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        </>
-      ) : (
-        /* SOBRE NOS */
-        <section className="pt-32 pb-20 px-6 max-w-7xl mx-auto space-y-24">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            <div className="space-y-6">
-              <h2 className="text-5xl font-black tracking-tighter leading-tight">Prime Smart Luxury: <br/> Desde 2026.</h2>
-              <p className="text-slate-500 leading-relaxed font-medium">Lideramos a automação residencial em Maputo com soluções de elite.</p>
-              <div className="grid grid-cols-2 gap-8 pt-6">
-                <div className="space-y-2">
-                  <Target className="w-8 h-8 text-blue-600" />
-                  <h4 className="font-black text-slate-900 uppercase text-xs">Missão</h4>
-                  <p className="text-xs text-slate-400">Democratizar o luxo inteligente em Moçambique.</p>
-                </div>
-                <div className="space-y-2">
-                  <Eye className="w-8 h-8 text-slate-900" />
-                  <h4 className="font-black text-slate-900 uppercase text-xs">Visão</h4>
-                  <p className="text-xs text-slate-400">Referência regional em Smart Homes.</p>
-                </div>
-              </div>
-            </div>
-            <div className="relative">
-               <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=800" className="rounded-[3rem] shadow-2xl" alt="Prime Office" />
-               <div className="absolute -bottom-6 -left-6 bg-white p-6 rounded-3xl shadow-xl border border-slate-50">
-                  <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Estabelecida em Maputo</p>
-                  <p className="text-2xl font-black">Janeiro, 2026</p>
-               </div>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* FOOTER */}
-      <footer className="py-20 px-6 border-t border-slate-100 bg-white">
-        <div className="max-w-7xl mx-auto text-center space-y-4">
-           <h1 className="text-xl font-black tracking-tighter">PRIME<span className="text-blue-600">SMART</span></h1>
-           <p className="text-[10px] font-black uppercase tracking-widest text-slate-300">© 2026 Prime Smart Group . Lda | Maputo - Moçambique</p>
-        </div>
-      </footer>
-
-      {/* CARRINHO LATERAL */}
-      {isCartOpen && (
-        <div className="fixed inset-0 z-[100] flex justify-end">
-          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsCartOpen(false)}></div>
-          <div className="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col p-8">
-            <div className="flex justify-between items-center mb-10">
-              <h3 className="text-2xl font-black">Carrinho ({cart.length})</h3>
-              <button onClick={() => setIsCartOpen(false)} className="p-2 text-slate-400"><X className="w-6 h-6" /></button>
-            </div>
-            <div className="flex-1 overflow-y-auto space-y-4">
-              {cart.map((item) => (
-                <div key={item.cartId} className="flex gap-4 bg-slate-50 p-3 rounded-2xl">
-                  <img src={item.img} alt={item.name} className="w-16 h-16 rounded-xl object-cover shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-bold text-xs truncate">{item.name}</h4>
-                    <p className="text-blue-600 font-black text-sm">{item.price.toLocaleString()} MT</p>
-                  </div>
-                  <button onClick={() => removeFromCart(item.cartId)} className="p-2 text-slate-300 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
-                </div>
-              ))}
-            </div>
-            {cart.length > 0 && (
-              <button onClick={() => processOrder('TERMINAL')} className="w-full mt-6 py-4 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs">Finalizar Compra</button>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* --- CONSOLE DE GESTÃO INTEGRADO (DEBUG) --- */}
-      <div className={`fixed bottom-0 left-0 right-0 z-[200] bg-slate-900 text-white transition-all duration-300 border-t border-white/10 ${isConsoleOpen ? 'h-[300px]' : 'h-10'}`}>
-        <div 
-          className="h-10 px-6 flex justify-between items-center bg-slate-800 cursor-pointer hover:bg-slate-700"
-          onClick={() => setIsConsoleOpen(!isConsoleOpen)}
-        >
-          <div className="flex items-center gap-2">
-            <Terminal className="w-4 h-4 text-blue-400" />
-            <span className="text-[10px] font-black uppercase tracking-widest">Console de Gestão Prime</span>
-          </div>
-          <div className="flex items-center gap-4">
-             <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{logs.length} Logs Ativos</span>
-             {isConsoleOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
-          </div>
-        </div>
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prime Smart Luxury</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <!-- Babel para JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
         
-        {isConsoleOpen && (
-          <div ref={scrollRef} className="p-4 h-[260px] overflow-y-auto font-mono text-[11px] space-y-1 bg-black/50">
-            {logs.map((log, i) => (
-              <div key={i} className="flex gap-3 border-b border-white/5 py-1">
-                <span className="text-slate-500 shrink-0">[{log.time}]</span>
-                <span className={`
-                  ${log.type === 'success' ? 'text-green-400' : ''}
-                  ${log.type === 'warning' ? 'text-yellow-400' : ''}
-                  ${log.type === 'info' ? 'text-blue-300' : ''}
-                  ${log.type === 'error' ? 'text-red-400' : ''}
-                `}>
-                  {log.type === 'success' && '✓ '}
-                  {log.type === 'warning' && '⚠ '}
-                  {log.type === 'error' && '✖ '}
-                  {log.msg}
-                </span>
-              </div>
-            ))}
-            <div className="pt-2 text-slate-600 italic">-- Aguardando novos eventos do sistema...</div>
-          </div>
-        )}
-      </div>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
 
-    </div>
-  );
-};
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
 
-export default App;
+        @keyframes fade-in-up {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-up { animation: fade-in-up 0.6s ease-out forwards; }
+    </style>
+</head>
+<body class="bg-[#fafafa] text-slate-900">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- ICONS WRAPPER ---
+        const Icon = ({ name, className = "w-5 h-5" }) => {
+            const [iconSvg, setIconSvg] = React.useState('');
+            React.useEffect(() => {
+                if (window.lucide) {
+                    const svg = window.lucide.createIcons();
+                }
+            }, [name]);
+            return <i data-lucide={name} className={className}></i>;
+        };
+
+        const INITIAL_PRODUCTS = [
+            { id: 1, name: "Fechadura Biométrica Titanium WiFi", price: 23000, cat: "Segurança", desc: "Acesso via digital, senha e app. O ápice da segurança residencial.", img: "https://images.unsplash.com/photo-1558002038-1091a5759232?auto=format&fit=crop&q=80&w=400" },
+            { id: 2, name: "Smart Lock Tuya Ultra WaterProof", price: 16500, cat: "Segurança", desc: "Resistência total à chuva com tecnologia RFID e Bluetooth.", img: "https://images.unsplash.com/photo-1639815188546-c43c240ff4df?auto=format&fit=crop&q=80&w=400" },
+            { id: 4, name: "Motor de Cortina Girier WiFi Silent", price: 8000, cat: "Conforto", desc: "Automatize as suas persianas com controlo de voz via Alexa.", img: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&q=80&w=400" },
+            { id: 9, name: "Video Doorbell IMOU 2S Premium", price: 12500, cat: "Segurança", desc: "Visão Panorâmica 30° e deteção humana com IA.", img: "https://images.unsplash.com/photo-1621259182978-f09317796934?auto=format&fit=crop&q=80&w=400" },
+            { id: 10, name: "Câmara MOES Pan/Tilt 4MP UltraHD", price: 3400, cat: "Segurança", desc: "Patrulha panorâmica e visão noturna infravermelha.", img: "https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&q=80&w=400" },
+            { id: 12, name: "Sensor Temp Sonoff Zigbee LCD", price: 3500, cat: "Sensores", desc: "Monitorização climática precisa com ecrã de 2.5 polegadas.", img: "https://images.unsplash.com/photo-1594322436404-5a0526db4d13?auto=format&fit=crop&q=80&w=400" },
+            { id: 16, name: "Tomada MOES Zigbee PowerMonitor", price: 2200, cat: "Energia", desc: "Controle gastos e agende horários para os seus aparelhos.", img: "https://images.unsplash.com/photo-1558489580-faa74691fdc5?auto=format&fit=crop&q=80&w=400" },
+            { id: 20, name: "Controlo Universal Avatto IR WiFi", price: 1300, cat: "Energia", desc: "Substitua todos os seus comandos por um único app.", img: "https://images.unsplash.com/photo-1527011046414-4781f1f94f8c?auto=format&fit=crop&q=80&w=400" }
+        ];
+
+        function App() {
+            const [view, setView] = useState('home'); 
+            const [cart, setCart] = useState([]);
+            const [isCartOpen, setIsCartOpen] = useState(false);
+            const [category, setCategory] = useState('Todos');
+            const [notification, setNotification] = useState(null);
+            const [isConsoleOpen, setIsConsoleOpen] = useState(false);
+            const [logs, setLogs] = useState([{ time: new Date().toLocaleTimeString(), msg: "Sistema Prime Smart iniciado.", type: 'info' }]);
+            
+            const scrollRef = useRef(null);
+            const categories = ['Todos', 'Segurança', 'Conforto', 'Sensores', 'Energia'];
+
+            const addLog = (msg, type = 'info') => {
+                setLogs(prev => [...prev, { time: new Date().toLocaleTimeString(), msg, type }]);
+            };
+
+            useEffect(() => {
+                if (window.lucide) window.lucide.createIcons();
+                if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+            }, [logs, isConsoleOpen, view, category, isCartOpen]);
+
+            const addToCart = (product) => {
+                setCart([...cart, { ...product, cartId: Math.random() }]);
+                setNotification(`${product.name} adicionado!`);
+                addLog(`Produto adicionado: ${product.name}`, 'success');
+                setTimeout(() => setNotification(null), 3000);
+            };
+
+            const removeFromCart = (cartId) => {
+                const item = cart.find(i => i.cartId === cartId);
+                setCart(cart.filter(item => item.cartId !== cartId));
+                addLog(`Removido do carrinho: ${item?.name}`, 'warning');
+            };
+
+            const processOrder = () => {
+                addLog(`Pedido de ${cart.length} itens processado.`, 'success');
+                setCart([]);
+                setIsCartOpen(false);
+                setNotification("Pedido realizado com sucesso!");
+                setTimeout(() => setNotification(null), 5000);
+            };
+
+            const totalValue = cart.reduce((acc, item) => acc + item.price, 0);
+            const filteredProducts = category === 'Todos' ? INITIAL_PRODUCTS : INITIAL_PRODUCTS.filter(p => p.cat === category);
+
+            return (
+                <div className="min-h-screen pb-12">
+                    {/* NOTIFICAÇÃO */}
+                    {notification && (
+                        <div className="fixed top-24 right-6 z-[100] bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-bounce">
+                            <i data-lucide="check-circle-2" className="text-blue-400 w-5 h-5"></i>
+                            <span className="font-medium text-sm">{notification}</span>
+                        </div>
+                    )}
+
+                    {/* NAVBAR */}
+                    <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl border-b border-slate-100 px-6 py-4">
+                        <div className="max-w-7xl mx-auto flex justify-between items-center">
+                            <div className="flex items-center gap-3 cursor-pointer" onClick={() => setView('home')}>
+                                <div className="bg-slate-900 p-2.5 rounded-2xl">
+                                    <i data-lucide="cpu" className="text-white w-6 h-6"></i>
+                                </div>
+                                <div>
+                                    <h1 className="text-xl font-black tracking-tighter leading-none text-slate-900">PRIME<span className="text-blue-600">SMART</span></h1>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Innovation . Maputo</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-6">
+                                <button onClick={() => setView('home')} className={`text-sm font-bold uppercase transition ${view === 'home' ? 'text-blue-600' : 'text-slate-500'}`}>Loja</button>
+                                <button onClick={() => setView('about')} className={`text-sm font-bold uppercase transition ${view === 'about' ? 'text-blue-600' : 'text-slate-500'}`}>Sobre</button>
+                                <button onClick={() => setIsCartOpen(true)} className="relative p-2.5 bg-slate-50 rounded-xl hover:bg-slate-100 transition">
+                                    <i data-lucide="shopping-cart" className="w-5 h-5 text-slate-700"></i>
+                                    {cart.length > 0 && <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full">{cart.length}</span>}
+                                </button>
+                            </div>
+                        </div>
+                    </nav>
+
+                    {view === 'home' ? (
+                        <main className="pt-32">
+                            {/* HERO */}
+                            <section className="px-6 mb-20 animate-up">
+                                <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
+                                    <div className="space-y-6">
+                                        <span className="bg-blue-50 text-blue-700 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest">Tecnologia de Luxo</span>
+                                        <h2 className="text-6xl font-black text-slate-900 leading-none">A sua casa, <br/><span className="text-blue-600">inteligente.</span></h2>
+                                        <p className="text-slate-500 text-lg max-w-md">Especialistas em automação residencial em Maputo. Segurança e conforto ao seu alcance.</p>
+                                        <div className="flex gap-4 pt-4">
+                                            <div className="border-l-2 border-blue-600 pl-4">
+                                                <p className="text-[10px] uppercase font-bold text-slate-400">Suporte</p>
+                                                <p className="font-bold text-slate-900">+258 84 787 5963</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="rounded-[2.5rem] overflow-hidden shadow-2xl rotate-1">
+                                        <img src="https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&q=80&w=1200" className="w-full object-cover aspect-video" />
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* CATALOGO */}
+                            <section className="px-6 max-w-7xl mx-auto pb-20">
+                                <div className="flex flex-col md:flex-row justify-between items-end mb-10 gap-4">
+                                    <h3 className="text-2xl font-black uppercase tracking-tight">Catálogo 2026</h3>
+                                    <div className="flex gap-2 bg-slate-100 p-1 rounded-xl overflow-x-auto no-scrollbar">
+                                        {categories.map(cat => (
+                                            <button 
+                                                key={cat} 
+                                                onClick={() => setCategory(cat)}
+                                                className={`px-4 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap ${category === cat ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500'}`}
+                                            >
+                                                {cat}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                                    {filteredProducts.map(p => (
+                                        <div key={p.id} className="bg-white border border-slate-100 p-4 rounded-[2rem] hover:shadow-xl transition-all group">
+                                            <div className="aspect-square rounded-[1.5rem] bg-slate-50 overflow-hidden mb-4 relative">
+                                                <img src={p.img} className="w-full h-full object-cover group-hover:scale-110 transition duration-500" />
+                                            </div>
+                                            <h4 className="font-bold text-slate-900 mb-1">{p.name}</h4>
+                                            <p className="text-[10px] text-slate-400 mb-4 line-clamp-2">{p.desc}</p>
+                                            <div className="flex justify-between items-center">
+                                                <span className="font-black text-lg">{p.price.toLocaleString()} MT</span>
+                                                <button onClick={() => addToCart(p)} className="bg-slate-900 text-white p-3 rounded-xl hover:bg-blue-600 transition">
+                                                    <i data-lucide="plus" className="w-5 h-5"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </section>
+                        </main>
+                    ) : (
+                        <section className="pt-40 px-6 max-w-3xl mx-auto text-center space-y-8 animate-up">
+                            <h2 className="text-4xl font-black">Liderança em Moçambique.</h2>
+                            <p className="text-slate-500 leading-relaxed text-lg">A Prime Smart Luxury nasceu da necessidade de trazer o que há de mais moderno em IoT para o mercado de Maputo, focando em durabilidade, elegância e suporte técnico local.</p>
+                            <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=800" className="rounded-[3rem] shadow-xl w-full" />
+                        </section>
+                    )}
+
+                    {/* CARRINHO */}
+                    {isCartOpen && (
+                        <div className="fixed inset-0 z-[100] flex justify-end">
+                            <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={() => setIsCartOpen(false)}></div>
+                            <div className="relative w-full max-w-sm bg-white h-full p-8 flex flex-col shadow-2xl animate-in slide-in-from-right duration-300">
+                                <div className="flex justify-between items-center mb-8">
+                                    <h3 className="text-xl font-black">Carrinho</h3>
+                                    <button onClick={() => setIsCartOpen(false)}><i data-lucide="x" className="w-6 h-6 text-slate-400"></i></button>
+                                </div>
+                                <div className="flex-1 overflow-y-auto space-y-4 custom-scrollbar">
+                                    {cart.length === 0 ? (
+                                        <p className="text-slate-300 text-center mt-20 font-bold uppercase text-xs">Vazio</p>
+                                    ) : (
+                                        cart.map(item => (
+                                            <div key={item.cartId} className="flex gap-4 items-center bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                                                <img src={item.img} className="w-12 h-12 rounded-lg object-cover" />
+                                                <div className="flex-1 truncate">
+                                                    <p className="text-[11px] font-bold text-slate-800 truncate">{item.name}</p>
+                                                    <p className="text-blue-600 font-black text-xs">{item.price.toLocaleString()} MT</p>
+                                                </div>
+                                                <button onClick={() => removeFromCart(item.cartId)} className="text-slate-300 hover:text-red-500"><i data-lucide="trash-2" className="w-4 h-4"></i></button>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                                {cart.length > 0 && (
+                                    <div className="pt-6 border-t border-slate-100 mt-6 space-y-4">
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-xs font-bold text-slate-400 uppercase">Total</span>
+                                            <span className="text-xl font-black">{totalValue.toLocaleString()} MT</span>
+                                        </div>
+                                        <button onClick={processOrder} className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-blue-100 hover:bg-blue-700 transition">Finalizar</button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* CONSOLE TERMINAL */}
+                    <div className={`fixed bottom-0 left-0 right-0 z-[150] bg-slate-900 text-white transition-all duration-300 ${isConsoleOpen ? 'h-64' : 'h-10'}`}>
+                        <div className="h-10 px-6 flex justify-between items-center bg-slate-800 cursor-pointer" onClick={() => setIsConsoleOpen(!isConsoleOpen)}>
+                            <div className="flex items-center gap-2">
+                                <i data-lucide="terminal" className="w-4 h-4 text-blue-400"></i>
+                                <span className="text-[10px] font-black uppercase tracking-widest">Sistema Ativo</span>
+                            </div>
+                            <span className="text-[9px] text-slate-500">{logs.length} Eventos</span>
+                        </div>
+                        {isConsoleOpen && (
+                            <div ref={scrollRef} className="p-4 h-52 overflow-y-auto font-mono text-[10px] space-y-1 custom-scrollbar">
+                                {logs.map((log, i) => (
+                                    <div key={i} className={`flex gap-3 py-0.5 ${log.type === 'success' ? 'text-green-400' : log.type === 'warning' ? 'text-yellow-400' : 'text-blue-300'}`}>
+                                        <span className="opacity-40">[{log.time}]</span>
+                                        <span>{log.msg}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
