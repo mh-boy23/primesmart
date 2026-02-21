@@ -1,11 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Shield, ShoppingBag, Plus, X, MinusCircle, 
-  Terminal, CheckCircle, PackagePlus, Layout, 
-  Settings, Lock, Phone, Mail, MapPin, 
-  Instagram, Facebook, ChevronDown, ChevronUp,
-  Smartphone, CreditCard, Trash2, Zap, Star,
-  Lightbulb, Wind, Thermometer, Radio
+  CheckCircle, PackagePlus, Layout, 
+  Settings, Lock, Trash2, Zap, Star,
+  Smartphone, CreditCard, ChevronDown, ChevronUp
 } from 'lucide-react';
 
 const INITIAL_PRODUCTS = [
@@ -41,12 +39,12 @@ export default function App() {
   const [isConsoleOpen, setIsConsoleOpen] = useState(false);
   const [logs, setLogs] = useState([{ time: new Date().toLocaleTimeString(), msg: "Ecossistema Prime Smart Luxury Online.", type: 'info' }]);
   
-  // Estados de Pagamento
+  // Estados de Checkout
   const [paymentStep, setPaymentStep] = useState('cart'); 
   const [paymentMethod, setPaymentMethod] = useState(''); 
   const [phoneNumber, setPhoneNumber] = useState('');
 
-  // Estado para Novo Produto
+  // Estados Admin
   const [newProduct, setNewProduct] = useState({ name: '', price: '', cat: 'Segurança', desc: '', img: '' });
 
   const scrollRef = useRef(null);
@@ -60,380 +58,298 @@ export default function App() {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [logs, isConsoleOpen]);
 
-  // Ações de Produto
   const addToCart = (product) => {
-    setCart([...cart, { ...product, cartId: Math.random() }]);
+    setCart(prev => [...prev, { ...product, cartId: Math.random() }]);
     setNotification(`${product.name} adicionado!`);
-    addLog(`Item no carrinho: ${product.name}`, 'success');
+    addLog(`Item adicionado: ${product.name}`, 'success');
     setTimeout(() => setNotification(null), 3000);
   };
 
   const removeFromCart = (cartId) => {
-    setCart(cart.filter(item => item.cartId !== cartId));
-    addLog(`Item removido do cesto.`, 'warning');
+    setCart(prev => prev.filter(item => item.cartId !== cartId));
+    addLog(`Item removido do carrinho.`, 'warning');
   };
 
   const deleteProduct = (id) => {
-    const productToDelete = products.find(p => p.id === id);
-    setProducts(products.filter(p => p.id !== id));
-    addLog(`ADMIN: Produto "${productToDelete?.name}" removido do catálogo.`, 'error');
-    setNotification("Produto removido do sistema.");
-    setTimeout(() => setNotification(null), 3000);
+    setProducts(prev => prev.filter(p => p.id !== id));
+    addLog(`ADMIN: Produto ID ${id} removido.`, 'error');
   };
 
   const handleAddProduct = (e) => {
     e.preventDefault();
     if (!newProduct.name || !newProduct.price) return;
     const p = { ...newProduct, id: Date.now(), price: Number(newProduct.price) };
-    setProducts([p, ...products]);
+    setProducts(prev => [p, ...prev]);
     setNewProduct({ name: '', price: '', cat: 'Segurança', desc: '', img: '' });
-    addLog(`ADMIN: Novo produto "${p.name}" adicionado.`, 'success');
+    addLog(`ADMIN: Novo produto "${p.name}" criado.`, 'success');
+  };
+
+  const handlePayment = (e) => {
+    e.preventDefault();
+    setPaymentStep('processing');
+    addLog(`Enviando push USSD para ${phoneNumber}...`, 'info');
+    setTimeout(() => {
+      addLog(`Pagamento confirmado via ${paymentMethod.toUpperCase()}.`, 'success');
+      setPaymentStep('success');
+      setCart([]);
+    }, 3500);
   };
 
   const totalValue = cart.reduce((acc, item) => acc + item.price, 0);
   const filteredProducts = category === 'Todos' ? products : products.filter(p => p.cat === category);
 
-  const handlePayment = async (e) => {
-    e.preventDefault();
-    setPaymentStep('processing');
-    addLog(`Iniciando API de pagamento via ${paymentMethod.toUpperCase()}...`, 'info');
-
-    setTimeout(() => {
-      addLog(`Confirmação recebida de ${phoneNumber}.`, 'success');
-      setPaymentStep('success');
-      setCart([]);
-    }, 4000);
-  };
-
   return (
     <div className="min-h-screen bg-[#fafafa] text-slate-900 font-sans pb-12 overflow-x-hidden">
-      {/* NOTIFICAÇÃO FLUTUANTE */}
+      
+      {/* NOTIFICAÇÃO */}
       {notification && (
-        <div className="fixed top-24 right-6 z-[100] bg-white border border-slate-100 px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4">
-          <div className="bg-blue-600 rounded-full p-1">
-             <CheckCircle className="text-white w-4 h-4" />
-          </div>
-          <span className="font-bold text-sm text-slate-800">{notification}</span>
+        <div className="fixed top-24 right-6 z-[100] bg-white border border-slate-100 px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-bounce">
+          <CheckCircle className="text-green-500 w-5 h-5" />
+          <span className="font-bold text-sm">{notification}</span>
         </div>
       )}
 
-      {/* BARRA DE NAVEGAÇÃO */}
-      <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl border-b border-slate-100 px-6 py-4">
+      {/* NAVBAR */}
+      <nav className="fixed top-0 w-full z-50 bg-white/90 backdrop-blur-md border-b border-slate-100 px-6 py-4">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-3 cursor-pointer group" onClick={() => { setView('home'); setPaymentStep('cart'); }}>
-            <div className="bg-slate-900 p-2 rounded-xl group-hover:bg-blue-600 transition-colors">
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => { setView('home'); setPaymentStep('cart'); }}>
+            <div className="bg-slate-900 p-2 rounded-xl">
               <Shield className="text-white w-5 h-5" />
             </div>
-            <h1 className="text-xl font-black tracking-tighter text-slate-900 uppercase">PRIME<span className="text-blue-600">SMART</span></h1>
+            <h1 className="text-xl font-black uppercase tracking-tighter">PRIME<span className="text-blue-600">SMART</span></h1>
           </div>
-          <div className="flex items-center gap-8">
-            <button onClick={() => setView('home')} className={`text-[11px] font-black uppercase tracking-widest transition-all ${view === 'home' ? 'text-blue-600' : 'text-slate-400 hover:text-slate-900'}`}>Loja</button>
-            <button onClick={() => setView('about')} className={`text-[11px] font-black uppercase tracking-widest transition-all ${view === 'about' ? 'text-blue-600' : 'text-slate-400 hover:text-slate-900'}`}>Empresa</button>
-            <button onClick={() => setView('admin')} className={`text-[11px] font-black uppercase tracking-widest transition-all ${view === 'admin' ? 'text-blue-600' : 'text-slate-400 hover:text-slate-900'}`}>Gestão</button>
-            <button onClick={() => setIsCartOpen(true)} className="relative p-2.5 bg-slate-900 rounded-2xl hover:scale-105 transition active:scale-95 shadow-lg shadow-slate-200">
+          <div className="flex items-center gap-6">
+            <button onClick={() => setView('home')} className={`text-[10px] font-black uppercase tracking-widest ${view === 'home' ? 'text-blue-600' : 'text-slate-400'}`}>Loja</button>
+            <button onClick={() => setView('about')} className={`text-[10px] font-black uppercase tracking-widest ${view === 'about' ? 'text-blue-600' : 'text-slate-400'}`}>Sobre</button>
+            <button onClick={() => setView('admin')} className={`text-[10px] font-black uppercase tracking-widest ${view === 'admin' ? 'text-blue-600' : 'text-slate-400'}`}>Gestão</button>
+            <button onClick={() => setIsCartOpen(true)} className="relative p-2.5 bg-slate-900 rounded-xl">
               <ShoppingBag className="w-5 h-5 text-white" />
-              {cart.length > 0 && <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-[9px] w-5 h-5 flex items-center justify-center rounded-full font-black border-2 border-white">{cart.length}</span>}
+              {cart.length > 0 && <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-[9px] w-5 h-5 flex items-center justify-center rounded-full font-bold">{cart.length}</span>}
             </button>
           </div>
         </div>
       </nav>
 
-      {/* CONTEÚDO PRINCIPAL */}
+      {/* HOME VIEW */}
       {view === 'home' && (
-        <main className="pt-24">
-          {/* HERO SECTION */}
-          <section className="relative px-6 pt-16 pb-24 overflow-hidden">
-            <div className="max-w-7xl mx-auto relative z-10">
-              <div className="max-w-3xl">
-                <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-600 px-4 py-2 rounded-full mb-8 animate-in fade-in slide-in-from-left-4">
-                  <Zap className="w-4 h-4 fill-current" />
-                  <span className="text-[10px] font-black uppercase tracking-widest">Tecnologia de Elite em Moçambique</span>
-                </div>
-                <h2 className="text-6xl md:text-8xl font-black text-slate-900 tracking-tighter leading-[0.9] mb-8">
-                  Onde o Luxo <br/>encontra a <span className="text-blue-600">Inteligência.</span>
-                </h2>
-                <p className="text-lg text-slate-500 max-w-xl leading-relaxed mb-10">
-                  Transforme a sua residência num santuário conectado. Segurança biométrica, automação de iluminação e conforto total na palma da sua mão.
-                </p>
-                <div className="flex gap-4">
-                   <button className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-[11px] hover:bg-blue-600 transition shadow-xl shadow-slate-200">
-                     Explorar Catálogo
-                   </button>
-                </div>
+        <main className="pt-28">
+          {/* HERO */}
+          <section className="px-6 py-12 max-w-7xl mx-auto">
+            <div className="max-w-2xl">
+              <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-600 px-4 py-2 rounded-full mb-6">
+                <Zap className="w-4 h-4" />
+                <span className="text-[10px] font-black uppercase">Smart Luxury Moçambique</span>
               </div>
+              <h2 className="text-6xl font-black tracking-tighter leading-none mb-6">Tecnologia que define o seu <span className="text-blue-600">Status.</span></h2>
+              <p className="text-slate-500 text-lg mb-8 leading-relaxed">Automação residencial de elite para quem não aceita menos que a perfeição.</p>
             </div>
-            <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-blue-50/50 to-transparent -z-10"></div>
-            <div className="absolute -top-24 -right-24 w-96 h-96 bg-blue-600/5 blur-[120px] rounded-full"></div>
           </section>
 
-          {/* CATALOGUE SECTION */}
-          <section className="px-6 py-12 max-w-7xl mx-auto">
-            <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
-              <div>
-                <h3 className="text-3xl font-black text-slate-900 tracking-tight">Seleção Exclusiva</h3>
-                <p className="text-slate-400 text-sm mt-1">Dispositivos testados e homologados para o mercado nacional.</p>
-              </div>
-              <div className="flex gap-2 overflow-x-auto no-scrollbar py-2">
-                {categories.map(cat => (
-                  <button 
-                    key={cat} 
-                    onClick={() => setCategory(cat)}
-                    className={`px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-tighter transition-all whitespace-nowrap ${category === cat ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' : 'bg-white text-slate-400 border border-slate-100 hover:border-blue-200'}`}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-              {filteredProducts.map(p => (
-                <div key={p.id} className="group bg-white p-5 rounded-[2.5rem] border border-slate-100 hover:shadow-2xl hover:shadow-slate-200/50 transition-all duration-500">
-                  <div className="aspect-[4/5] rounded-[2rem] bg-slate-50 overflow-hidden mb-6 relative border border-slate-50">
-                    <img src={p.img} className="w-full h-full object-cover group-hover:scale-110 transition duration-700" alt={p.name} />
-                    <div className="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-sm">
-                       <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
-                       <span className="text-[9px] font-black text-slate-900">PREMIUM</span>
-                    </div>
-                  </div>
-                  <div className="px-2">
-                    <div className="flex justify-between items-start mb-2">
-                      <span className="text-[10px] font-black uppercase text-blue-500 tracking-widest">{p.cat}</span>
-                    </div>
-                    <h4 className="font-bold text-slate-900 text-base mb-1 leading-tight h-10 overflow-hidden">{p.name}</h4>
-                    <p className="text-[11px] text-slate-400 mb-4 truncate">{p.desc}</p>
-                    <div className="flex justify-between items-center pt-4 border-t border-slate-50">
-                      <div>
-                         <p className="text-[9px] text-slate-400 font-bold uppercase">Preço</p>
-                         <p className="font-black text-xl text-slate-900">{p.price.toLocaleString()} <span className="text-[10px] text-blue-600">MT</span></p>
-                      </div>
-                      <button onClick={() => addToCart(p)} className="bg-slate-900 text-white p-3.5 rounded-2xl hover:bg-blue-600 transition shadow-lg active:scale-95">
-                        <Plus className="w-5 h-5" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
+          {/* FILTROS */}
+          <section className="px-6 mb-12 max-w-7xl mx-auto">
+            <div className="flex gap-3 overflow-x-auto no-scrollbar pb-4">
+              {categories.map(cat => (
+                <button 
+                  key={cat} 
+                  onClick={() => setCategory(cat)}
+                  className={`px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${category === cat ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-white text-slate-400 border border-slate-100 hover:border-blue-200'}`}
+                >
+                  {cat}
+                </button>
               ))}
             </div>
           </section>
-        </main>
-      )}
 
-      {view === 'about' && (
-        <main className="pt-28 px-6 max-w-5xl mx-auto space-y-24 pb-20">
-          <section className="text-center space-y-6">
-            <span className="text-blue-600 font-black uppercase tracking-[0.3em] text-[10px]">A Nossa Essência</span>
-            <h2 className="text-5xl md:text-6xl font-black text-slate-900 leading-tight">Arquitetamos o Futuro da <br/><span className="text-blue-600">Vida Conectada.</span></h2>
-            <p className="text-slate-500 text-lg max-w-2xl mx-auto leading-relaxed italic border-l-4 border-blue-600 pl-8 text-left py-4">
-              "Na Prime Smart Luxury, não vendemos apenas dispositivos; desenhamos experiências onde a tecnologia se torna invisível e a conveniência se torna absoluta."
-            </p>
-          </section>
-
-          <section className="grid md:grid-cols-3 gap-8">
-            <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all group">
-              <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mb-8 group-hover:bg-blue-600 transition-colors">
-                <Layout className="text-blue-600 group-hover:text-white w-7 h-7" />
-              </div>
-              <h3 className="font-black text-xl mb-4">Consultoria Elite</h3>
-              <p className="text-slate-400 text-sm leading-relaxed">Planeamento estratégico para novas construções, integrando domótica desde a planta até ao acabamento final.</p>
-            </div>
-            <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all group">
-              <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mb-8 group-hover:bg-blue-600 transition-colors">
-                <Settings className="text-blue-600 group-hover:text-white w-7 h-7" />
-              </div>
-              <h3 className="font-black text-xl mb-4">Suporte Vitalício</h3>
-              <p className="text-slate-400 text-sm leading-relaxed">Equipa técnica especializada em Maputo para garantir que o seu ecossistema digital funcione sem interrupções.</p>
-            </div>
-            <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all group">
-              <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mb-8 group-hover:bg-blue-600 transition-colors">
-                <Lock className="text-blue-600 group-hover:text-white w-7 h-7" />
-              </div>
-              <h3 className="font-black text-xl mb-4">Segurança 360º</h3>
-              <p className="text-slate-400 text-sm leading-relaxed">Proteção de dados e redes privadas para garantir que a sua privacidade seja tão forte quanto a sua fechadura.</p>
-            </div>
-          </section>
-        </main>
-      )}
-
-      {view === 'admin' && (
-        <main className="pt-28 px-6 max-w-6xl mx-auto pb-24">
-          <div className="grid lg:grid-cols-3 gap-12">
-            <div className="lg:col-span-1">
-              <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-xl sticky top-28">
-                <div className="flex items-center gap-4 mb-8">
-                  <div className="p-3 bg-blue-50 rounded-2xl">
-                    <PackagePlus className="text-blue-600 w-6 h-6" />
+          {/* GRID DE PRODUTOS */}
+          <section className="px-6 max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            {filteredProducts.map(p => (
+              <div key={p.id} className="group bg-white p-5 rounded-[2.5rem] border border-slate-100 hover:shadow-2xl transition-all">
+                <div className="aspect-[4/5] rounded-[2rem] bg-slate-50 overflow-hidden mb-6 relative">
+                  <img src={p.img} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" alt={p.name} />
+                  <div className="absolute top-4 left-4 bg-white/90 px-3 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
+                    <Star className="w-3 h-3 text-yellow-500 fill-current" />
+                    <span className="text-[9px] font-black">PREMIUM</span>
                   </div>
-                  <h2 className="text-xl font-black">Novo Item</h2>
                 </div>
-                <form onSubmit={handleAddProduct} className="space-y-4">
-                   <input type="text" placeholder="Nome do Produto" className="w-full bg-slate-50 p-4 rounded-xl text-sm outline-none border border-slate-50 focus:border-blue-500 transition" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} />
-                   <input type="number" placeholder="Preço em MT" className="w-full bg-slate-50 p-4 rounded-xl text-sm outline-none border border-slate-50 focus:border-blue-500 transition" value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: e.target.value})} />
-                   <select className="w-full bg-slate-50 p-4 rounded-xl text-sm outline-none border border-slate-50" value={newProduct.cat} onChange={e => setNewProduct({...newProduct, cat: e.target.value})}>
-                     {categories.filter(c => c !== 'Todos').map(c => <option key={c} value={c}>{c}</option>)}
-                   </select>
-                   <textarea placeholder="Descrição Curta" className="w-full bg-slate-50 p-4 rounded-xl text-sm outline-none border border-slate-50" value={newProduct.desc} onChange={e => setNewProduct({...newProduct, desc: e.target.value})} />
-                   <input type="text" placeholder="URL da Imagem" className="w-full bg-slate-50 p-4 rounded-xl text-sm outline-none border border-slate-50" value={newProduct.img} onChange={e => setNewProduct({...newProduct, img: e.target.value})} />
-                   <button className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-600 transition shadow-lg shadow-slate-200">Adicionar Catálogo</button>
-                </form>
+                <span className="text-[10px] font-black uppercase text-blue-500 tracking-widest">{p.cat}</span>
+                <h4 className="font-bold text-slate-900 mt-1 mb-1 truncate">{p.name}</h4>
+                <p className="text-[10px] text-slate-400 mb-4 h-4 overflow-hidden">{p.desc}</p>
+                <div className="flex justify-between items-center pt-4 border-t border-slate-50">
+                  <p className="font-black text-xl">{p.price.toLocaleString()} <span className="text-xs text-blue-600 uppercase font-bold tracking-tighter">MT</span></p>
+                  <button onClick={() => addToCart(p)} className="bg-slate-900 text-white p-3 rounded-xl hover:bg-blue-600 transition">
+                    <Plus className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
-            </div>
+            ))}
+          </section>
+        </main>
+      )}
 
-            <div className="lg:col-span-2">
-              <div className="mb-6 flex items-center justify-between">
-                <h2 className="text-2xl font-black">Inventário Ativo</h2>
-                <span className="bg-slate-100 px-4 py-1.5 rounded-full text-[10px] font-black uppercase text-slate-500">{products.length} Itens</span>
-              </div>
-              <div className="space-y-4">
-                {products.map(p => (
-                  <div key={p.id} className="bg-white p-4 rounded-3xl border border-slate-100 flex items-center gap-4 group hover:border-red-100 transition-colors">
-                    <img src={p.img} className="w-16 h-16 rounded-2xl object-cover shrink-0" alt="" />
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-bold text-slate-900 truncate">{p.name}</h4>
-                      <p className="text-[10px] font-black uppercase text-slate-400">{p.cat} • {p.price.toLocaleString()} MT</p>
-                    </div>
-                    <button 
-                      onClick={() => deleteProduct(p.id)}
-                      className="p-3 rounded-2xl text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all flex items-center gap-2"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                      <span className="text-[10px] font-bold uppercase hidden md:inline">Remover</span>
-                    </button>
+      {/* ADMIN VIEW */}
+      {view === 'admin' && (
+        <main className="pt-28 px-6 max-w-7xl mx-auto">
+          <div className="grid lg:grid-cols-3 gap-12">
+            <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-xl h-fit">
+              <h3 className="text-xl font-black mb-6 flex items-center gap-3">
+                <PackagePlus className="text-blue-600" /> Novo Produto
+              </h3>
+              <form onSubmit={handleAddProduct} className="space-y-4">
+                <input type="text" placeholder="Nome" className="w-full p-4 bg-slate-50 rounded-xl outline-none" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} />
+                <input type="number" placeholder="Preço MT" className="w-full p-4 bg-slate-50 rounded-xl outline-none" value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: e.target.value})} />
+                <select className="w-full p-4 bg-slate-50 rounded-xl outline-none" value={newProduct.cat} onChange={e => setNewProduct({...newProduct, cat: e.target.value})}>
+                  {categories.filter(c => c !== 'Todos').map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+                <input type="text" placeholder="URL Imagem" className="w-full p-4 bg-slate-50 rounded-xl outline-none" value={newProduct.img} onChange={e => setNewProduct({...newProduct, img: e.target.value})} />
+                <button className="w-full bg-slate-900 text-white py-4 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-600 transition">Cadastrar</button>
+              </form>
+            </div>
+            <div className="lg:col-span-2 space-y-4">
+              <h3 className="text-xl font-black mb-6">Produtos no Sistema</h3>
+              {products.map(p => (
+                <div key={p.id} className="bg-white p-4 rounded-3xl border border-slate-100 flex items-center gap-4">
+                  <img src={p.img} className="w-16 h-16 rounded-2xl object-cover" alt="" />
+                  <div className="flex-1">
+                    <h4 className="font-bold text-sm">{p.name}</h4>
+                    <p className="text-[10px] font-bold text-slate-400">{p.cat} • {p.price.toLocaleString()} MT</p>
                   </div>
-                ))}
-              </div>
+                  <button onClick={() => deleteProduct(p.id)} className="p-3 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition">
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
         </main>
       )}
 
-      {/* CARRINHO E CHECKOUT SIDEBAR */}
+      {/* SOBRE VIEW */}
+      {view === 'about' && (
+        <main className="pt-28 px-6 max-w-4xl mx-auto text-center space-y-12">
+          <h2 className="text-5xl font-black leading-tight">Arquitetamos o Futuro do seu <span className="text-blue-600">Lar.</span></h2>
+          <div className="grid md:grid-cols-2 gap-8 text-left">
+            <div className="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm">
+               <Layout className="text-blue-600 mb-6 w-10 h-10" />
+               <h3 className="font-bold text-xl mb-4 text-slate-900">Consultoria</h3>
+               <p className="text-slate-500 leading-relaxed text-sm">Integração completa em projetos de construção civil de luxo.</p>
+            </div>
+            <div className="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm">
+               <Settings className="text-blue-600 mb-6 w-10 h-10" />
+               <h3 className="font-bold text-xl mb-4 text-slate-900">Suporte</h3>
+               <p className="text-slate-500 leading-relaxed text-sm">Monitorização e suporte técnico especializado local.</p>
+            </div>
+          </div>
+        </main>
+      )}
+
+      {/* CARRINHO MODAL */}
       {isCartOpen && (
         <div className="fixed inset-0 z-[100] flex justify-end">
-          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-md" onClick={() => { setIsCartOpen(false); setPaymentStep('cart'); }}></div>
-          <div className="relative w-full max-w-sm bg-white h-full p-8 flex flex-col shadow-2xl transition-all animate-in slide-in-from-right duration-500">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsCartOpen(false)}></div>
+          <div className="relative w-full max-w-md bg-white h-full p-8 shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
             <div className="flex justify-between items-center mb-10">
-              <h3 className="text-2xl font-black tracking-tight">{paymentStep === 'checkout' ? 'Pagamento' : 'O Seu Cesto'}</h3>
-              <button onClick={() => { setIsCartOpen(false); setPaymentStep('cart'); }} className="p-2 bg-slate-50 rounded-xl hover:rotate-90 transition-transform"><X className="w-6 h-6" /></button>
+              <h3 className="text-2xl font-black italic">{paymentStep === 'cart' ? 'O Seu Cesto' : 'Checkout'}</h3>
+              <button onClick={() => setIsCartOpen(false)} className="p-2 bg-slate-100 rounded-full hover:rotate-90 transition"><X /></button>
             </div>
 
             {paymentStep === 'cart' && (
-              <>
-                <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
+              <div className="flex-1 flex flex-col">
+                <div className="flex-1 overflow-y-auto space-y-4">
                   {cart.length === 0 ? (
-                    <div className="h-full flex flex-col items-center justify-center space-y-4 opacity-30">
-                      <ShoppingBag className="w-16 h-16" />
-                      <p className="font-bold italic">O seu cesto está vazio</p>
+                    <div className="h-full flex flex-col items-center justify-center opacity-20">
+                      <ShoppingBag className="w-16 h-16 mb-4" />
+                      <p className="font-bold">Cesto vazio</p>
                     </div>
                   ) : (
                     cart.map(item => (
-                      <div key={item.cartId} className="flex gap-4 items-center bg-slate-50 p-4 rounded-3xl border border-slate-50">
+                      <div key={item.cartId} className="flex gap-4 items-center bg-slate-50 p-4 rounded-2xl">
                         <img src={item.img} className="w-12 h-12 rounded-xl object-cover" alt="" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-bold text-slate-800 truncate">{item.name}</p>
+                        <div className="flex-1">
+                          <p className="text-xs font-bold truncate">{item.name}</p>
                           <p className="text-blue-600 font-black text-xs">{item.price.toLocaleString()} MT</p>
                         </div>
-                        <button onClick={() => removeFromCart(item.cartId)} className="text-slate-300 hover:text-red-500 transition-colors"><MinusCircle className="w-5 h-5" /></button>
+                        <button onClick={() => removeFromCart(item.cartId)} className="text-slate-300 hover:text-red-500"><MinusCircle className="w-5 h-5" /></button>
                       </div>
                     ))
                   )}
                 </div>
                 {cart.length > 0 && (
-                  <div className="pt-8 border-t border-slate-100 mt-6 space-y-6">
+                  <div className="pt-8 border-t border-slate-100 space-y-6">
                     <div className="flex justify-between items-end">
-                      <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Total Estimado</span>
-                      <span className="text-3xl font-black text-slate-900">{totalValue.toLocaleString()} <span className="text-sm">MT</span></span>
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Subtotal</span>
+                      <span className="text-3xl font-black">{totalValue.toLocaleString()} MT</span>
                     </div>
-                    <button onClick={() => setPaymentStep('checkout')} className="w-full bg-slate-900 text-white py-5 rounded-[2rem] font-black uppercase text-[11px] tracking-[0.2em] shadow-2xl shadow-slate-200 flex items-center justify-center gap-3 hover:bg-blue-600 transition-all">
-                      Check-out Seguro <CreditCard className="w-4 h-4" />
-                    </button>
+                    <button onClick={() => setPaymentStep('checkout')} className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-600 transition">Finalizar Compra</button>
                   </div>
                 )}
-              </>
+              </div>
             )}
 
             {paymentStep === 'checkout' && (
-              <div className="flex-1 flex flex-col">
-                <button onClick={() => setPaymentStep('cart')} className="mb-8 text-[10px] font-black text-blue-600 uppercase flex items-center gap-1 hover:gap-2 transition-all">
-                  ← Voltar para o Cesto
-                </button>
-                
-                <h4 className="font-bold text-sm mb-6">Carteira Móvel</h4>
-                <div className="grid grid-cols-2 gap-4 mb-8">
-                    <button onClick={() => setPaymentMethod('mpesa')} className={`p-6 rounded-[2rem] border-2 transition-all flex flex-col items-center gap-3 ${paymentMethod === 'mpesa' ? 'border-red-500 bg-red-50/20' : 'border-slate-50 bg-slate-50 hover:border-slate-200'}`}>
-                        <div className="w-12 h-12 bg-red-600 rounded-2xl flex items-center justify-center font-black text-white text-lg shadow-lg shadow-red-100">M</div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-red-600">M-Pesa</span>
-                    </button>
-                    <button onClick={() => setPaymentMethod('emola')} className={`p-6 rounded-[2rem] border-2 transition-all flex flex-col items-center gap-3 ${paymentMethod === 'emola' ? 'border-orange-500 bg-orange-50/20' : 'border-slate-50 bg-slate-50 hover:border-slate-200'}`}>
-                        <div className="w-12 h-12 bg-orange-500 rounded-2xl flex items-center justify-center font-black text-white text-lg shadow-lg shadow-orange-100">E</div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-orange-600">e-Mola</span>
-                    </button>
+              <div className="space-y-8 animate-in fade-in">
+                <button onClick={() => setPaymentStep('cart')} className="text-[10px] font-black uppercase text-blue-600 hover:translate-x-1 transition">← Voltar ao Cesto</button>
+                <div className="grid grid-cols-2 gap-4">
+                  <button onClick={() => setPaymentMethod('mpesa')} className={`p-6 rounded-2xl border-2 transition ${paymentMethod === 'mpesa' ? 'border-red-500 bg-red-50/10' : 'border-slate-50 bg-slate-50'}`}>
+                    <div className="bg-red-600 text-white w-10 h-10 rounded-xl flex items-center justify-center font-black mx-auto mb-2 italic">M</div>
+                    <span className="text-[10px] font-black uppercase text-red-600">M-Pesa</span>
+                  </button>
+                  <button onClick={() => setPaymentMethod('emola')} className={`p-6 rounded-2xl border-2 transition ${paymentMethod === 'emola' ? 'border-orange-500 bg-orange-50/10' : 'border-slate-50 bg-slate-50'}`}>
+                    <div className="bg-orange-500 text-white w-10 h-10 rounded-xl flex items-center justify-center font-black mx-auto mb-2 italic">E</div>
+                    <span className="text-[10px] font-black uppercase text-orange-600">e-Mola</span>
+                  </button>
                 </div>
-
                 {paymentMethod && (
-                  <form onSubmit={handlePayment} className="space-y-6 animate-in slide-in-from-bottom-4">
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Contacto Associado</label>
-                        <div className="relative">
-                            <Smartphone className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                            <input type="tel" required placeholder="8X XXX XXXX" className="w-full bg-slate-50 border border-slate-100 py-5 pl-14 pr-4 rounded-[2rem] focus:outline-none focus:ring-4 focus:ring-blue-500/10 font-black text-lg" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, '').slice(0, 9))} />
-                        </div>
+                  <form onSubmit={handlePayment} className="space-y-4">
+                    <label className="text-[10px] font-black uppercase text-slate-400 px-1">Número de Telemóvel</label>
+                    <div className="relative">
+                      <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+                      <input required type="tel" placeholder="8X XXX XXXX" className="w-full bg-slate-50 py-5 pl-12 pr-4 rounded-2xl font-black text-lg outline-none border border-slate-100 focus:border-blue-500 transition" value={phoneNumber} onChange={e => setPhoneNumber(e.target.value.replace(/\D/g, '').slice(0, 9))} />
                     </div>
-                    <button type="submit" disabled={phoneNumber.length < 9} className={`w-full py-5 rounded-[2rem] font-black uppercase text-[11px] tracking-widest shadow-2xl transition-all ${phoneNumber.length >= 9 ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-200' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}`}>
-                      Autorizar Pagamento
-                    </button>
+                    <button className={`w-full py-5 rounded-2xl font-black uppercase text-[10px] tracking-widest text-white shadow-xl ${phoneNumber.length >= 9 ? 'bg-blue-600 shadow-blue-200' : 'bg-slate-200 cursor-not-allowed text-slate-400'}`} disabled={phoneNumber.length < 9}>Pagar {totalValue.toLocaleString()} MT</button>
                   </form>
                 )}
               </div>
             )}
 
             {paymentStep === 'processing' && (
-               <div className="flex-1 flex flex-col items-center justify-center text-center space-y-8">
-                 <div className="relative w-32 h-32">
-                   <div className="absolute inset-0 border-4 border-blue-50 rounded-full"></div>
-                   <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
-                   <Smartphone className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 text-blue-600" />
-                 </div>
-                 <div className="space-y-2">
-                   <h4 className="text-xl font-black">Aguarda o Prompt...</h4>
-                   <p className="text-sm text-slate-400 leading-relaxed">Enviámos uma solicitação de pagamento para o número <strong>{phoneNumber}</strong>. Introduz o teu PIN.</p>
-                 </div>
-               </div>
+              <div className="flex-1 flex flex-col items-center justify-center text-center space-y-6">
+                <div className="w-20 h-20 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
+                <div>
+                  <h4 className="font-black text-xl italic">Aguardando Confirmação</h4>
+                  <p className="text-slate-400 text-xs mt-2 px-8 leading-relaxed">Verifique o seu telemóvel para introduzir o PIN e autorizar a transação.</p>
+                </div>
+              </div>
             )}
 
             {paymentStep === 'success' && (
-              <div className="flex-1 flex flex-col items-center justify-center text-center space-y-8 animate-in zoom-in-95">
-                <div className="w-24 h-24 bg-green-500 rounded-full flex items-center justify-center shadow-2xl shadow-green-200">
-                    <CheckCircle className="w-12 h-12 text-white" />
+              <div className="flex-1 flex flex-col items-center justify-center text-center space-y-6 animate-in zoom-in-95">
+                <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center shadow-xl shadow-green-100">
+                  <CheckCircle className="text-white w-10 h-10" />
                 </div>
-                <div>
-                    <h4 className="text-3xl font-black mb-3 italic leading-tight">Sucesso Absolute.</h4>
-                    <p className="text-slate-400 text-sm">O seu pedido está a ser processado pela equipa Prime Luxury. Receberá um contacto em breve.</p>
-                </div>
-                <button onClick={() => { setView('home'); setIsCartOpen(false); setPaymentStep('cart'); }} className="w-full bg-slate-900 text-white py-5 rounded-3xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-600 transition-all">
-                  Voltar à Experiência
-                </button>
+                <h4 className="text-3xl font-black italic">Compra Concluída.</h4>
+                <p className="text-slate-400 text-sm px-4">Obrigado por escolher a excelência. A nossa equipa entrará em contacto para a entrega.</p>
+                <button onClick={() => { setIsCartOpen(false); setPaymentStep('cart'); }} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest">Sair do Checkout</button>
               </div>
             )}
           </div>
         </div>
       )}
 
-      {/* TERMINAL DE LOGS */}
-      <div className={`fixed bottom-0 left-0 right-0 z-[150] bg-slate-900 text-white transition-all duration-500 shadow-2xl ${isConsoleOpen ? 'h-56' : 'h-10'}`}>
+      {/* TERMINAL LOGS */}
+      <div className={`fixed bottom-0 left-0 right-0 z-[150] bg-slate-900 text-white transition-all shadow-2xl ${isConsoleOpen ? 'h-48' : 'h-10'}`}>
         <div className="h-10 px-6 flex justify-between items-center bg-slate-950 cursor-pointer" onClick={() => setIsConsoleOpen(!isConsoleOpen)}>
           <div className="flex items-center gap-3">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-400">Prime Event Monitor v2.0</span>
+            <span className="text-[9px] font-black uppercase tracking-widest text-blue-400">Prime Status Monitor</span>
           </div>
           {isConsoleOpen ? <ChevronDown className="w-4 h-4 text-slate-500" /> : <ChevronUp className="w-4 h-4 text-slate-500" />}
         </div>
         {isConsoleOpen && (
-          <div ref={scrollRef} className="p-6 h-46 overflow-y-auto font-mono text-[10px] space-y-2 bg-slate-900/50 custom-scrollbar">
+          <div ref={scrollRef} className="p-4 h-38 overflow-y-auto font-mono text-[9px] space-y-1 custom-scrollbar">
             {logs.map((log, i) => (
-              <div key={i} className={`flex gap-4 p-2 rounded-lg ${log.type === 'success' ? 'bg-green-500/10 text-green-400' : log.type === 'error' ? 'bg-red-500/10 text-red-400' : 'bg-blue-500/10 text-blue-300'}`}>
-                <span className="opacity-40 shrink-0 font-bold">{log.time}</span>
-                <span className="flex-1">{log.msg}</span>
+              <div key={i} className={`flex gap-3 opacity-80 ${log.type === 'success' ? 'text-green-400' : log.type === 'error' ? 'text-red-400' : 'text-blue-300'}`}>
+                <span className="opacity-40">{log.time}</span>
+                <span>{log.msg}</span>
               </div>
             ))}
           </div>
